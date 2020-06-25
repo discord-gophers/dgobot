@@ -1,5 +1,4 @@
-Discord Gophers Bot
-# dgobot
+# Discord Gophers Bot
 
 <img align="right" src="http://bwmarrin.github.io/discordgo/img/discordgo.png">
 
