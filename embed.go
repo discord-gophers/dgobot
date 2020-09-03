@@ -21,7 +21,7 @@ func embed(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
 	embed.Title = "Embed Title"
 	embed.URL = "https://github.com/bwmarrin/disgord"
 	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: "https://cdn.discordapp.com/embed/avatars/0.png"}
-	embed.Description = "This is the ~~embed~~ **description** ```go fmt.Println(`Gopher!`)```"
+	embed.Description = "This is the ~~embed~~ **description**\n```go\ngo fmt.Println(`Gopher!`)\n```"
 	embed.Image = &discordgo.MessageEmbedImage{URL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 
 	embed.Fields = []*discordgo.MessageEmbedField{
