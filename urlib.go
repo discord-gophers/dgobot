@@ -4,9 +4,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -17,6 +17,7 @@ import (
 	"github.com/bwmarrin/lit"
 )
 
+
 type UResource struct {
 	URL         *url.URL
 	Keywords    []string
@@ -25,6 +26,10 @@ type UResource struct {
 	Added       time.Time
 	Author      discordgo.User
 }
+
+// Skippy
+const adminUserID = `109112383011581952`
+const herderRoleID = `370280974593818644`
 
 var URLib map[string]*UResource
 var URKeywordMap map[string][]*UResource
@@ -35,15 +40,15 @@ func SaveURLib() {
 	URMutex.Lock()
 	defer URMutex.Unlock()
 
-	log.Println("Saving repository...")
+	lit.Debug("Saving repository...")
 
 	data, err := json.MarshalIndent(URLib, "", "\t")
 	if err != nil {
-		log.Println(err)
+		lit.Error("Unable to marshal urllib: %v", err)
 	}
 
 	if err := ioutil.WriteFile("urlib.json", data, os.ModePerm); err != nil {
-		log.Printf("Error saving urlib.json. %v", err)
+		lit.Error("Error saving urlib.json. %v", err)
 	}
 
 }
@@ -55,13 +60,13 @@ func LoadURLib() {
 
 	data, err := ioutil.ReadFile("urlib.json")
 	if err != nil {
-		log.Println("error reading urlib.json:", err)
+		lit.Error("error reading urlib.json:", err)
 		return
 	}
 
 	err = json.Unmarshal(data, &URLib)
 	if err != nil {
-		log.Println("error unmarshalling urlib:", err)
+		lit.Error("error unmarshalling urlib:", err)
 	}
 
 	// populate keyword map
@@ -112,15 +117,23 @@ func urlib(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	// check for Gopher Herder role
 	herder := false
 	gm, err := dg.State.Member(m.GuildID, m.Author.ID)
+	if errors.Is(err, discordgo.ErrStateNotFound) {
+		lit.Debug("error fetching user %s from state: %v", m.Author.ID, err)
+		gm, err = dg.GuildMember(m.GuildID, m.Author.ID)
+		if err != nil {
+			lit.Warn("error fetching user %s: %v", m.Author.ID, err)
+		}
+	}
+
 	if err == nil {
 		for _, v := range gm.Roles {
-			if v == "370280974593818644" {
+			if v == herderRoleID {
 				herder = true
 			}
 		}
 	}
 
-	if strings.HasPrefix(arg, `?`) && (m.Author.ID == `109112383011581952` || herder) {
+	if strings.HasPrefix(arg, `?`) && (m.Author.ID == adminUserID || herder) {
 		msg := `
 ?go ? : help (?go ?)
 ?go + : add (?go +URL|KEYWORD KEYWORD KEYWORD|TITLE)
@@ -128,19 +141,20 @@ func urlib(dg *discordgo.Session, m *discordgo.MessageCreate) {
 ?go / : search (?go /keyword)
 default is search, spaces are unimportant.
 `
-		dg.ChannelMessageSend(m.ChannelID, msg)
+		_, err = dg.ChannelMessageSend(m.ChannelID, msg)
+		if err != nil {
+			lit.Warn("Error sending discord message: %v", err)
+		}
 
 	}
 
-	if strings.HasPrefix(arg, `=`) && (m.Author.ID == `109112383011581952` || herder) {
-
+	if strings.HasPrefix(arg, `=`) && (m.Author.ID == adminUserID || herder) {
 		for k, v := range URLib {
 			lit.Debug("[%s] = %#v\n", k, v)
-
 		}
 	}
 
-	if strings.HasPrefix(arg, `-`) && (m.Author.ID == `109112383011581952` || herder) {
+	if strings.HasPrefix(arg, `-`) && (m.Author.ID == adminUserID || herder) {
 
 		arg = strings.TrimPrefix(arg, `-`)
 		lit.Debug("[%s]", arg)
@@ -161,7 +175,7 @@ default is search, spaces are unimportant.
 		return
 	}
 
-	if strings.HasPrefix(arg, `+`) && (m.Author.ID == `109112383011581952` || herder) {
+	if strings.HasPrefix(arg, `+`) && (m.Author.ID == adminUserID || herder) {
 
 		arg = strings.TrimPrefix(arg, `+`)
 
