@@ -1,6 +1,4 @@
 github.com/bwmarrin/discordgo v0.19.0/go.mod h1:O9S4p+ofTFwB02em7jkpkV8M3R0/PUVOwN61zSZ0r4Q=
-github.com/bwmarrin/discordgo v0.23.1 h1:xlK4/69bpl/VSoCYaKe3BOc9j1HkNopoRdCppRYu8dk=
-github.com/bwmarrin/discordgo v0.23.1/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
 github.com/bwmarrin/discordgo v0.23.2 h1:BzrtTktixGHIu9Tt7dEE6diysEF9HWnXeHuoJEt2fH4=
 github.com/bwmarrin/discordgo v0.23.2/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
 github.com/bwmarrin/disgord v0.0.0-20200407171809-1fe97f20c0de h1:2T3Z604FVz7TwksHHi7QBz4Mn1TA+/sSSLLGQCPyMn0=

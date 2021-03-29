@@ -17,7 +17,6 @@ import (
 	"github.com/bwmarrin/lit"
 )
 
-
 type UResource struct {
 	URL         *url.URL
 	Keywords    []string
