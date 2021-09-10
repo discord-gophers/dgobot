@@ -1,19 +1,26 @@
-package main
-
-// Command parser for the Disgord Bot package.
+package commands
 
 import (
+	"github.com/bwmarrin/lit"
 	"math/rand"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/disgord/x/mux"
 )
 
 func init() {
-	Router.Route("joke", "The best dad jokes on Discord!", DadJoke)
+	Commands[cmdJoke.Name] = &Command{
+		ApplicationCommand: cmdJoke,
+		Handler:            handleJoke,
+	}
 }
 
-func DadJoke(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
+var cmdJoke = &discordgo.ApplicationCommand{
+	Type:        discordgo.ChatApplicationCommand,
+	Name:        "joke",
+	Description: "The best dad jokes on Discord!",
+}
+
+func handleJoke(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 
 	joke := []string{
 		"I attached all my watches together to make a belt.. It was a waist of time.",
@@ -196,5 +203,12 @@ func DadJoke(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
 		`If you need to wait a long time, try eating a clock, it's very time consuming.`,
 	}
 
-	ds.ChannelMessageSend(dm.ChannelID, joke[rand.Intn(len(joke))])
+	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: joke[rand.Intn(len(joke))],
+		},
+	}); err != nil {
+		lit.Error("error responding to joke command: %v", err)
+	}
 }

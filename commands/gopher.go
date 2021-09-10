@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"encoding/binary"
@@ -12,32 +12,38 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/disgord/x/mux"
 	"github.com/bwmarrin/lit"
 )
 
-var token string
-
 func init() {
-	Router.Route("gopher", "Hear the call of the Gopher!", Gopher)
+	Commands[cmdGopher.Name] = &Command{
+		ApplicationCommand: cmdGopher,
+		Handler:            handleGopher,
+	}
 }
 
-func Gopher(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
+var cmdGopher = &discordgo.ApplicationCommand{
+	Type:        discordgo.ChatApplicationCommand,
+	Name:        "gopher",
+	Description: "Hear the call of the Gopher!",
+}
+
+func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 
 	if rand.Intn(15) <= 1 {
-		ds.ChannelMessageSend(dm.ChannelID, `https://www.youtube.com/watch?v=iay2wUY8uqA`)
+		ds.ChannelMessageSend(ic.ChannelID, `https://www.youtube.com/watch?v=iay2wUY8uqA`)
 		return
 	}
 
 	// get channel
-	c, err := ds.State.Channel(dm.ChannelID)
+	c, err := ds.State.Channel(ic.ChannelID)
 	if err != nil {
 
 		// Try fetching via REST API
-		c, err = ds.Channel(dm.ChannelID)
+		c, err = ds.Channel(ic.ChannelID)
 		if err != nil {
 			lit.Error("getting channel, %s", err)
-			ds.ChannelMessageSend(dm.ChannelID, `Looks like all the Gophers are sleeping right now`)
+			ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
 			return
 		}
 	}
@@ -47,10 +53,10 @@ func Gopher(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
 	if err != nil {
 
 		// Try fetching via REST API
-		g, err = ds.Guild(dm.ChannelID)
+		g, err = ds.Guild(ic.ChannelID)
 		if err != nil {
 			lit.Error("getting guild, %s", err)
-			ds.ChannelMessageSend(dm.ChannelID, `Looks like all the Gophers are sleeping right now`)
+			ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
 			return
 		}
 	}
@@ -58,18 +64,18 @@ func Gopher(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
 	// Look for the message sender in that guild's current voice states.
 	for _, vs := range g.VoiceStates {
 
-		if vs.UserID == dm.Author.ID {
+		if vs.UserID == ic.Message.Author.ID {
 			err = playSound(ds, g.ID, vs.ChannelID)
 			if err != nil {
 				lit.Error("play sound, %s", err)
-				ds.ChannelMessageSend(dm.ChannelID, `Looks like all the Gophers are sleeping right now`)
+				ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
 			}
 			return
 		}
 
 	}
 
-	ds.ChannelMessageSend(dm.ChannelID, `Sorry, you must be in a voice channel to hear the mighty gopher.`)
+	ds.ChannelMessageSend(ic.ChannelID, `Sorry, you must be in a voice channel to hear the mighty gopher.`)
 }
 
 var gopherlock sync.Mutex

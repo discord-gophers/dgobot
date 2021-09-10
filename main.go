@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/DiscordGophers/dgobot/commands"
 	"log"
 	"os"
 	"os/signal"
@@ -11,9 +12,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 )
-
-// Version is a constant that stores the Disgord version information.
-const Version = "v0.0.0-alpha"
 
 // Session is declared in the global space so it can be easily used
 // throughout this program.
@@ -44,7 +42,7 @@ func main() {
 	||    |  \|  |/  ___// ___\ /  _ \_  __ \/ __ | 
 	||    '   \  |\___ \/ /_/  >  <_> )  | \/ /_/ | 
 	||______  /__/____  >___  / \____/|__|  \____ | 
-	\_______\/        \/_____/   %-16s\/`+"\n\n", Version)
+	\_______\/        \/_____/   %-16s\/`+"\n\n", commands.Version)
 
 	// Parse command line arguments
 	flag.Parse()

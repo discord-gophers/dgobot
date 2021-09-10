@@ -1,23 +1,31 @@
-package main
+package commands
 
 import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/disgord/x/mux"
 	"github.com/bwmarrin/lit"
 )
 
 func init() {
-	Router.Route("embed", "Example Embed!", embed)
+	Commands[cmdEmbed.Name] = &Command{
+		ApplicationCommand: cmdEmbed,
+		Handler:            handleEmbed,
+	}
 }
 
-func embed(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
+var cmdEmbed = &discordgo.ApplicationCommand{
+	Type:        discordgo.ChatApplicationCommand,
+	Name:        "embed",
+	Description: "Example Embed!",
+}
+
+func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 
 	var embed discordgo.MessageEmbed
 
 	embed.Color = 0xf2c5a8
-	embed.Author = &discordgo.MessageEmbedAuthor{Name: "Embed Author", URL: "http://discordapp.com", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
+	embed.Author = &discordgo.MessageEmbedAuthor{Name: "Embed Author", URL: "https://discordapp.com", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Title = "Embed Title"
 	embed.URL = "https://github.com/bwmarrin/disgord"
 	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: "https://cdn.discordapp.com/embed/avatars/0.png"}
@@ -33,8 +41,14 @@ func embed(ds *discordgo.Session, dm *discordgo.Message, ctx *mux.Context) {
 	embed.Footer = &discordgo.MessageEmbedFooter{Text: "Footer Text", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Timestamp = time.Now().UTC().Format(time.RFC3339)
 
-	_, err := ds.ChannelMessageSendEmbed(dm.ChannelID, &embed)
-	if err != nil {
-		lit.Error("error sending message, %s", err)
+	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
+				&embed,
+			},
+		},
+	}); err != nil {
+		lit.Error("error responding to embed command: %v", err)
 	}
 }
