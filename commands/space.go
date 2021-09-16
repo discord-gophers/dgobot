@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -18,13 +17,6 @@ var cmdSpace = &discordgo.ApplicationCommand{
 	Description: "Take b1nzy to space!",
 }
 
-func handleSpace(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "https://takeb1nzyto.space",
-		},
-	}); err != nil {
-		lit.Error("error responding to space command: %v", err)
-	}
+func handleSpace(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	return ContentResponse("https://takeb1nzyto.space"), nil
 }

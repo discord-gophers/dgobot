@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -18,14 +17,8 @@ var cmdInvite = &discordgo.ApplicationCommand{
 	Description: "Display an invite link for this bot.",
 }
 
-func handleInvite(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+const inviteLink = "https://discord.com/oauth2/authorize?client_id=173113690092994561&scope=bot"
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Please visit https://discordapp.com/oauth2/authorize?client_id=173113690092994561&scope=bot to add dgo to your server.",
-		},
-	}); err != nil {
-		lit.Error("error responding to invite command: %v", err)
-	}
+func handleInvite(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	return ContentResponse("Please visit " + inviteLink + " to add dgo to your server."), nil
 }

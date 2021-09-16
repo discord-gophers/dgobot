@@ -4,9 +4,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/bwmarrin/lit"
-	"log"
 	"time"
+
+	"github.com/bwmarrin/lit"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -31,8 +31,7 @@ var cmdWhois = &discordgo.ApplicationCommand{
 	},
 }
 
-func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
+func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	// Figure out who we're going to pull info on
 	lookupID := ic.Member.User.ID
 	optionUser := ic.ApplicationCommandData().Options[0].UserValue(ds)
@@ -40,23 +39,18 @@ func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		lookupID = optionUser.ID
 	}
 
-	m, c, g, ok := memberChannelGuild(ds, lookupID, ic.ChannelID, ic.GuildID)
-	if !ok {
-		if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Sorry " + ic.Member.Mention() + ", I couldn't find any information to give you :(",
-				Flags:   64, // ephemeral
-			},
-		}); err != nil {
-			lit.Error("error responding to whois command: %v", err)
-		}
+	m, c, g, err := memberChannelGuild(ds, lookupID, ic.ChannelID, ic.GuildID)
+	if err != nil {
+		lit.Error("whois: %v", err)
+		return nil, fmt.Errorf("Sorry, I couldn't find any information to give you :(")
 	}
 
 	perms, err := ds.UserChannelPermissions(lookupID, ic.ChannelID)
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("whois: channel perms: %v", err)
+		return nil, fmt.Errorf("An error occurred.")
 	}
+
 	//if (perms & discordgo.PermissionManageServer) > 0 {
 	// This user has Manage Server permission
 	//}
@@ -72,7 +66,8 @@ func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	for _, v := range m.Roles {
 		r, err := ds.State.Role(ic.GuildID, v)
 		if err != nil {
-			fmt.Printf("err fetching role %s, %s\n", v, err)
+			lit.Error("whois: fetching role %s: %v\n", v, err)
+			continue
 		}
 		roles = roles + delim + r.Name + " (" + r.ID + ")"
 		delim = ", "
@@ -85,21 +80,13 @@ func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	if m.Nick == "" {
 		m.Nick = m.User.Username
 	}
-	var js = "N/A"
+	js := "N/A"
 	if string(m.JoinedAt) != "" {
 		jd, err := time.Parse(time.RFC3339, string(m.JoinedAt))
 		if err != nil {
-			log.Println("error parsing date,", err)
+			lit.Error("whois: parsing date: %v", err)
 		} else {
-			tsjd := time.Since(jd)
-
-			js = fmt.Sprintf(
-				"%dd, %dh, %dm, %ds ago.",
-				int(tsjd.Hours()/24),
-				int(tsjd.Hours())%24,
-				int(tsjd.Minutes())%60,
-				int(tsjd.Seconds())%60,
-			)
+			js = fmt.Sprintf("<t:%d:R>", jd.Unix())
 		}
 	}
 
@@ -116,37 +103,24 @@ func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	embed.Footer = &discordgo.MessageEmbedFooter{Text: "Provided with gopher love", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Timestamp = time.Now().UTC().Format(time.RFC3339)
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: []*discordgo.MessageEmbed{
-				&embed,
-			},
-		},
-	}); err != nil {
-		lit.Error("error responding to whois command: %v", err)
-	}
+	return EmbedResponse(embed), nil
 }
 
-func memberChannelGuild(ds *discordgo.Session, memberID, channelID, guildID string) (*discordgo.Member, *discordgo.Channel, *discordgo.Guild, bool) {
+func memberChannelGuild(ds *discordgo.Session, memberID, channelID, guildID string) (*discordgo.Member, *discordgo.Channel, *discordgo.Guild, error) {
 	m, err := ds.State.Member(guildID, memberID)
 	if err != nil {
-		lit.Error("error getting Member from state: %v", err)
-		return nil, nil, nil, false
+		return nil, nil, nil, fmt.Errorf("could not get member from state: %v", err)
 	}
-	fmt.Printf("Member: %#v\nUser: %#v\n", m, m.User)
 
 	c, err := ds.State.Channel(channelID)
 	if err != nil {
-		lit.Error("error getting Channel from state: %v", err)
-		return nil, nil, nil, false
+		return nil, nil, nil, fmt.Errorf("could not get channel from state: %v", err)
 	}
 
 	g, err := ds.State.Guild(guildID)
 	if err != nil {
-		lit.Error("error getting Guild from state: %v", err)
-		return nil, nil, nil, false
+		return nil, nil, nil, fmt.Errorf("could not get guild from state: %v", err)
 	}
 
-	return m, c, g, true
+	return m, c, g, nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"sync"
@@ -28,11 +27,11 @@ var cmdGopher = &discordgo.ApplicationCommand{
 	Description: "Hear the call of the Gopher!",
 }
 
-func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+var gopherErr = fmt.Errorf("Looks like all gophers are asleep right now")
 
+func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	if rand.Intn(15) <= 1 {
-		ds.ChannelMessageSend(ic.ChannelID, `https://www.youtube.com/watch?v=iay2wUY8uqA`)
-		return
+		return ContentResponse("https://www.youtube.com/watch?v=iay2wUY8uqA"), nil
 	}
 
 	// get channel
@@ -42,9 +41,8 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		// Try fetching via REST API
 		c, err = ds.Channel(ic.ChannelID)
 		if err != nil {
-			lit.Error("getting channel, %s", err)
-			ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
-			return
+			lit.Error("gopher: getting channel: %v", err)
+			return nil, gopherErr
 		}
 	}
 
@@ -55,38 +53,36 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		// Try fetching via REST API
 		g, err = ds.Guild(ic.ChannelID)
 		if err != nil {
-			lit.Error("getting guild, %s", err)
-			ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
-			return
+			lit.Error("gopher: getting guild: %s", err)
+			return nil, gopherErr
 		}
 	}
 
 	// Look for the message sender in that guild's current voice states.
 	for _, vs := range g.VoiceStates {
-
 		if vs.UserID == ic.Message.Author.ID {
-			err = playSound(ds, g.ID, vs.ChannelID)
-			if err != nil {
-				lit.Error("play sound, %s", err)
-				ds.ChannelMessageSend(ic.ChannelID, `Looks like all the Gophers are sleeping right now`)
-			}
-			return
+			// Call in goroutine to allow functon to return response
+			go func() {
+				err = playSound(ds, g.ID, vs.ChannelID)
+				if err != nil {
+					lit.Error("gopher: playing sound: %s", err)
+				}
+			}()
+			return ContentResponse("Dispatching..."), nil
 		}
-
 	}
 
-	ds.ChannelMessageSend(ic.ChannelID, `Sorry, you must be in a voice channel to hear the mighty gopher.`)
+	return nil, fmt.Errorf("Sorry, you must be in avoice channel to hear the mighty gopher.")
 }
 
 var gopherlock sync.Mutex
 
 // playSound plays the current buffer to the provided channel.
 func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
-
 	gopherlock.Lock()
 	defer gopherlock.Unlock()
 
-	var buffer = make([][]byte, 0)
+	buffer := make([][]byte, 0)
 	var opuslen int16
 
 	files, err := ioutil.ReadDir("sounds/")
@@ -95,21 +91,19 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	}
 
 	gopher := files[rand.Intn(len(files))]
-	log.Println("Playing", gopher.Name())
+	lit.Debug("Playing %s", gopher.Name())
 
 	// Join the provided voice channel.
 	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, true)
 	defer vc.Disconnect()
 	if err != nil {
-		fmt.Println("Cannot join voice, ", err)
-		return err
+		return fmt.Errorf("could not join voice: %w", err)
 	}
 
 	// read the file
 	file, err := os.Open("sounds/" + gopher.Name())
 	if err != nil {
-		fmt.Printf("Error opening dca file %s, %s", file.Name(), err)
-		return err
+		return fmt.Errorf("could not open dca file %s: %v", file.Name(), err)
 	}
 
 	for {
@@ -126,27 +120,21 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 		}
 
 		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
-			return err
+			return fmt.Errorf("could not read from dca file: %v", err)
 		}
 
 		if opuslen < 5 || opuslen > 500 {
-			log.Printf("Something wrong with opuslen : %d\n", opuslen)
-			return fmt.Errorf("bad size opuslen")
+			return fmt.Errorf("bad opuslen size: %v", opuslen)
 		}
 
 		// Read encoded pcm from dca file.
-		InBuf := make([]byte, opuslen)
-		err = binary.Read(file, binary.LittleEndian, &InBuf)
-
-		// Should not be any end of file errors
-		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
-			return err
+		inBuf := make([]byte, opuslen)
+		if err = binary.Read(file, binary.LittleEndian, &inBuf); err != nil {
+			return fmt.Errorf("could not read from dca file: %v", err)
 		}
 
 		// Append encoded pcm data to the buffer.
-		buffer = append(buffer, InBuf)
+		buffer = append(buffer, inBuf)
 	}
 
 	time.Sleep(500 * time.Millisecond)

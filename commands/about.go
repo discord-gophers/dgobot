@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -18,8 +17,7 @@ var cmdAbout = &discordgo.ApplicationCommand{
 	Description: "About this Bot.",
 }
 
-func handleAbout(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
+func handleAbout(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	resp := "\n" +
 		"Hi, I'm **dgo** the official Discord Google Go library (discordgo) test bot.\n\n" +
 		"I provide indispensable stress and bug testing of the discordgo library. " +
@@ -28,12 +26,5 @@ func handleAbout(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		"You can learn more about me at <http://dgobot.com/>\n\n" +
 		"Also, checkout <https://airhorn.solutions/> and <http://septapus.com/> the two largest bots developed with the discordgo library.\n"
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: resp,
-		},
-	}); err != nil {
-		lit.Error("error responding to about command: %v", err)
-	}
+	return ContentResponse(resp), nil
 }

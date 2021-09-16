@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/DiscordGophers/dgobot/commands"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/DiscordGophers/dgobot/commands"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
@@ -21,8 +22,6 @@ var Session, _ = discordgo.New()
 // Read in all configuration options from both environment variables and
 // command line arguments.
 func init() {
-
-	// Discord Authentication Token
 	Session.Token = os.Getenv("DG_TOKEN")
 	if Session.Token == "" {
 		flag.StringVar(&Session.Token, "t", "", "Discord Authentication Token")
@@ -31,43 +30,34 @@ func init() {
 }
 
 func main() {
-
-	// Declare any variables needed later.
-	var err error
-
-	// Print out a fancy logo!
-	fmt.Printf(` 
+	fmt.Printf(`
 	________  .__                               .___
 	\______ \ |__| ______ ____   ___________  __| _/
-	||    |  \|  |/  ___// ___\ /  _ \_  __ \/ __ | 
-	||    '   \  |\___ \/ /_/  >  <_> )  | \/ /_/ | 
-	||______  /__/____  >___  / \____/|__|  \____ | 
+	||    |  \|  |/  ___// ___\ /  _ \_  __ \/ __ |
+	||    '   \  |\___ \/ /_/  >  <_> )  | \/ /_/ |
+	||______  /__/____  >___  / \____/|__|  \____ |
 	\_______\/        \/_____/   %-16s\/`+"\n\n", commands.Version)
 
-	// Parse command line arguments
 	flag.Parse()
-
-	// Verify a Token was provided
 	if Session.Token == "" {
+		flag.Usage()
 		log.Println("You must provide a Discord authentication token.")
 		return
 	}
 
-	// Open a websocket connection to Discord
-	err = Session.Open()
+	Session.AddHandler(commands.OnInteractionCommand)
+
+	err := Session.Open()
 	if err != nil {
-		log.Printf("error opening connection to Discord, %s\n", err)
-		os.Exit(1)
+		log.Fatalf("error opening connection to Discord: %v", err)
 	}
 
-	// Wait for a CTRL-C
+	commands.LoadCommands(Session, false)
+
 	log.Println(`Now running. Press CTRL-C to exit.`)
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	// Clean up
 	Session.Close()
-
-	// Exit Normally.
 }

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/bwmarrin/lit"
 	"runtime"
 	"time"
 
@@ -24,8 +23,7 @@ var cmdStats = &discordgo.ApplicationCommand{
 	Description: "Display statistical information for this bot.",
 }
 
-func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
+func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 
@@ -59,14 +57,5 @@ func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	}
 	embed.Timestamp = time.Now().UTC().Format(time.RFC3339)
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: []*discordgo.MessageEmbed{
-				&embed,
-			},
-		},
-	}); err != nil {
-		lit.Error("error responding to stats command: %v", err)
-	}
+	return EmbedResponse(embed), nil
 }

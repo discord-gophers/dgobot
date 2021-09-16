@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/bwmarrin/lit"
 	"math/rand"
 
 	"github.com/bwmarrin/discordgo"
@@ -15,18 +14,16 @@ func init() {
 	}
 }
 
+// TODO: make A, X slash command params
 var cmdRoll = &discordgo.ApplicationCommand{
 	Type:        discordgo.ChatApplicationCommand,
 	Name:        "roll",
 	Description: "Roll the dice.",
 }
 
-func handleRoll(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
-	var A, X int // A is number of dice to roll, X is faces of dice
-
-	A = 1
-	X = 6
+func handleRoll(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	// A is number of dice to roll, X is faces of dice
+	A, X := 1, 6
 
 	var sum int
 	var rn int
@@ -34,13 +31,6 @@ func handleRoll(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		rn = rand.Intn(X) + 1
 		sum += rn
 	}
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("```ruby\n[%dd%d] Rolled : %d```", A, X, sum),
-		},
-	}); err != nil {
-		lit.Error("error responding to roll command: %v", err)
-	}
 
+	return ContentResponse(fmt.Sprintf("```\n[%dd%d] Rolled: %d```", A, X, sum)), nil
 }

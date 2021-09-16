@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -26,20 +25,11 @@ var cmdSay = &discordgo.ApplicationCommand{
 	},
 }
 
-func handleSay(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
+func handleSay(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	resp := ic.ApplicationCommandData().Options[0].StringValue()
 	if resp == "" {
 		resp = "Say what?"
 	}
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: resp,
-		},
-	}); err != nil {
-		lit.Error("error responding to say command: %v", err)
-	}
-
+	return ContentResponse(resp), nil
 }

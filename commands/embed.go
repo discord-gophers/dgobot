@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -20,8 +19,7 @@ var cmdEmbed = &discordgo.ApplicationCommand{
 	Description: "Example Embed!",
 }
 
-func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-
+func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var embed discordgo.MessageEmbed
 
 	embed.Color = 0xf2c5a8
@@ -41,14 +39,5 @@ func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	embed.Footer = &discordgo.MessageEmbedFooter{Text: "Footer Text", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Timestamp = time.Now().UTC().Format(time.RFC3339)
 
-	if err := ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: []*discordgo.MessageEmbed{
-				&embed,
-			},
-		},
-	}); err != nil {
-		lit.Error("error responding to embed command: %v", err)
-	}
+	return EmbedResponse(embed), nil
 }
