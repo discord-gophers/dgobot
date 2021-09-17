@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/DiscordGophers/dgobot/commands"
 
@@ -33,6 +35,9 @@ func main() {
 		lit.Error("could not parse flags: %v", err)
 		return
 	}
+
+	// Seed rand for any random commands
+	rand.Seed(time.Now().UnixNano())
 
 	session, err := discordgo.New("Bot " + *token)
 	if err != nil {
