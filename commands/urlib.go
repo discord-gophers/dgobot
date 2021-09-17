@@ -271,5 +271,5 @@ func (u *URLib) handleURLibList(_ *discordgo.Session, _ *discordgo.InteractionCr
 	for _, ur := range u.resource {
 		str.WriteString(fmt.Sprintf("**%s**, <%s> - *%s* (%s)\n", ur.Title, ur.URL.String(), ur.Author.Username, strings.Join(ur.Keywords, ", ")))
 	}
-	return ContentResponse(str.String()), nil
+	return EphemeralResponse(str.String()), nil
 }
