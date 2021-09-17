@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/bwmarrin/discordgo"
@@ -27,8 +28,10 @@ var cmd8Ball = &discordgo.ApplicationCommand{
 	},
 }
 
-func handle8Ball(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	return ContentResponse(magicAnswers[rand.Intn(len(magicAnswers))]), nil
+func handle8Ball(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	query := ic.ApplicationCommandData().Options[0].StringValue()
+	resp := fmt.Sprintf("> %s\n%s", query, magicAnswers[rand.Intn(len(magicAnswers))])
+	return ContentResponse(resp), nil
 }
 
 var magicAnswers = []string{
