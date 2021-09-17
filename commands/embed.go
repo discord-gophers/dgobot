@@ -25,14 +25,14 @@ func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disco
 	embed.Color = 0xf2c5a8
 	embed.Author = &discordgo.MessageEmbedAuthor{Name: "Embed Author", URL: "https://discordapp.com", IconURL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Title = "Embed Title"
-	embed.URL = "https://github.com/bwmarrin/disgord"
+	embed.URL = "https://github.com/DiscordGophers/dgobot"
 	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 	embed.Description = "This is the ~~embed~~ **description**\n```go\ngo fmt.Println(`Gopher!`)\n```"
 	embed.Image = &discordgo.MessageEmbedImage{URL: "https://cdn.discordapp.com/embed/avatars/0.png"}
 
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{Name: "Field Name", Value: "Value", Inline: true},
-		{Name: "Disgord", Value: Version, Inline: true},
+		{Name: "dgobot", Value: Version, Inline: true},
 		{Name: "DiscordGo", Value: discordgo.VERSION, Inline: true},
 	}
 
