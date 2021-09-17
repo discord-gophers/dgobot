@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+	
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -17,8 +19,7 @@ var cmdInvite = &discordgo.ApplicationCommand{
 	Description: "Display an invite link for this bot.",
 }
 
-const inviteLink = "https://discord.com/oauth2/authorize?client_id=173113690092994561&scope=bot"
-
-func handleInvite(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func handleInvite(ds *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	inviteLink := fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s&scope=bot%%20application.commands", ds.State.User.ID)
 	return ContentResponse("Please visit " + inviteLink + " to add dgo to your server."), nil
 }
