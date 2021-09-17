@@ -1,9 +1,6 @@
 package commands
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 )
@@ -11,10 +8,14 @@ import (
 // Version is a constant that stores the Disgord version information.
 const Version = "v0.1.0-rewrite"
 
-var Commands = map[string]*Command{}
+var (
+	AdminUserID  string // Skippy
+	HerderRoleID string
+)
+
+var Commands = make(map[string]*Command)
 
 type Command struct {
-	Loaded bool
 	*discordgo.ApplicationCommand
 	Handler func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
 }
@@ -51,47 +52,6 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 	if err != nil {
 		lit.Error("responding to interaction %s: %v", data.Name, err)
 	}
-}
-
-func LoadCommands(ds *discordgo.Session, all bool) error {
-	commands, err := ds.ApplicationCommands(ds.State.User.ID, "")
-	if err != nil {
-		return fmt.Errorf("loading commands: %v", err)
-	}
-
-	// Load active commands.
-	for _, c := range commands {
-		cmd, ok := Commands[c.Name]
-		if !ok {
-			continue
-		}
-		cmd.Loaded = true
-		lit.Debug("Loaded %s", cmd.Name)
-	}
-
-	for name, c := range Commands {
-		// Ignore already loaded when not updating all.
-		if c.Loaded && !all {
-			continue
-		}
-
-		_, err := ds.ApplicationCommandCreate(ds.State.User.ID, "", c.ApplicationCommand)
-		if err != nil {
-			return err
-		}
-		lit.Debug("Creating %s", name)
-		c.Loaded = true
-	}
-
-	return nil
-}
-
-func GetEnvDefault(key, def string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		return def
-	}
-	return val
 }
 
 func ContentResponse(c string) *discordgo.InteractionResponseData {

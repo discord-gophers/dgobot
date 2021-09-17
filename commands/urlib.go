@@ -76,6 +76,19 @@ var cmdURLib = &discordgo.ApplicationCommand{
 		},
 		{
 			Type:        discordgo.ApplicationCommandOptionSubCommand,
+			Name:        "remove",
+			Description: "Remove URL",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url",
+					Description: "The URL to remove",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommand,
 			Name:        "list",
 			Description: "List URLs",
 		},
@@ -83,18 +96,12 @@ var cmdURLib = &discordgo.ApplicationCommand{
 }
 
 type UResource struct {
-	URL      *url.URL
-	Keywords []string
-	Title    string
-	Added    time.Time
-	Author   discordgo.User
+	URL      *url.URL       `json:"url"`
+	Keywords []string       `json:"keywords"`
+	Title    string         `json:"title"`
+	Added    time.Time      `json:"added"`
+	Author   discordgo.User `json:"author"`
 }
-
-// Skippy
-var (
-	adminUserID  = GetEnvDefault("DG_ADMIN_ID", "109112383011581952")
-	herderRoleID = GetEnvDefault("DG_HERDER_ID", "370280974593818644")
-)
 
 type URLib struct {
 	mx       sync.Mutex
@@ -151,8 +158,12 @@ func LoadURLib(path string) (*URLib, error) {
 		return nil, err
 	}
 
-	var urlib *URLib
-	if err = json.NewDecoder(f).Decode(&urlib); err != nil {
+	urlib := &URLib{
+		fileName: path,
+		keyword:  make(map[string][]*UResource),
+		resource: make(map[string]*UResource),
+	}
+	if err = json.NewDecoder(f).Decode(&urlib.resource); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s: %v", path, err)
 	}
 
@@ -169,7 +180,7 @@ func LoadURLib(path string) (*URLib, error) {
 	return urlib, nil
 }
 
-func (u *URLib) handleURL(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (u *URLib) handleURL(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	arg := ic.ApplicationCommandData().Options[0].StringValue()
 
 	// Check if we have this keyword...
@@ -188,17 +199,17 @@ func (u *URLib) handleURL(ds *discordgo.Session, ic *discordgo.InteractionCreate
 func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var herder bool
 	for _, role := range ic.Member.Roles {
-		if role == herderRoleID {
+		if role == HerderRoleID {
 			herder = true
 			break
 		}
 	}
 
-	if !(ic.Member.User.ID == adminUserID || herder) {
+	if !(ic.Member.User.ID == AdminUserID || herder) {
 		return nil, fmt.Errorf("These commands are only for herders and above.")
 	}
 
-	cmd := ic.ApplicationCommandData().Options[0].StringValue()
+	cmd := ic.ApplicationCommandData().Options[0].Name
 	switch cmd {
 	case "add":
 		return u.handleURLibAdd(ds, ic)
@@ -210,7 +221,7 @@ func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCrea
 	return nil, fmt.Errorf("Invalid option: `%s`.", cmd)
 }
 
-func (u *URLib) handleURLibAdd(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (u *URLib) handleURLibAdd(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	ur := ic.ApplicationCommandData().Options[0].Options[0].StringValue()
 	urp, err := url.Parse(ur)
 	if err != nil {
@@ -239,7 +250,7 @@ func (u *URLib) handleURLibAdd(ds *discordgo.Session, ic *discordgo.InteractionC
 	return EphemeralResponse(resp), nil
 }
 
-func (u *URLib) handleURLibRemove(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (u *URLib) handleURLibRemove(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	arg := ic.ApplicationCommandData().Options[0].Options[0].StringValue()
 
 	if ok := u.Remove(arg); !ok {
@@ -255,6 +266,10 @@ func (u *URLib) handleURLibRemove(ds *discordgo.Session, ic *discordgo.Interacti
 	return EphemeralResponse(resp), nil
 }
 
-func (u *URLib) handleURLibList(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	return nil, fmt.Errorf("unimplemented")
+func (u *URLib) handleURLibList(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	var str strings.Builder
+	for _, ur := range u.resource {
+		str.WriteString(fmt.Sprintf("**%s**, <%s> - *%s* (%s)\n", ur.Title, ur.URL.String(), ur.Author.Username, strings.Join(ur.Keywords, ", ")))
+	}
+	return ContentResponse(str.String()), nil
 }

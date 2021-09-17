@@ -72,7 +72,7 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disc
 		}
 	}
 
-	return nil, fmt.Errorf("Sorry, you must be in avoice channel to hear the mighty gopher.")
+	return nil, fmt.Errorf("Sorry, you must be in a voice channel to hear the mighty gopher.")
 }
 
 var gopherlock sync.Mutex

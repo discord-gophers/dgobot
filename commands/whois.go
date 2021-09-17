@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bwmarrin/lit"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
 )
 
 func init() {
@@ -34,9 +33,8 @@ var cmdWhois = &discordgo.ApplicationCommand{
 func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	// Figure out who we're going to pull info on
 	lookupID := ic.Member.User.ID
-	optionUser := ic.ApplicationCommandData().Options[0].UserValue(ds)
-	if optionUser != nil {
-		lookupID = optionUser.ID
+	if len(ic.ApplicationCommandData().Options) > 0 {
+		lookupID = ic.ApplicationCommandData().Options[0].UserValue(ds).ID
 	}
 
 	m, c, g, err := memberChannelGuild(ds, lookupID, ic.ChannelID, ic.GuildID)

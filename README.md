@@ -8,11 +8,7 @@ DiscordGo package.
 
 
 To add this bot to your Discord server, use 
-[this link](https://discordapp.com/oauth2/authorize?client_id=173113690092994561&scope=bot).
-
-* See [Disgord](https://github.com/bwmarrin/disgord) for example of or starting 
-point for creating an easy to use and extensible Discord bot using the DiscordGo 
-package.
+[this link](https://discordapp.com/oauth2/authorize?client_id=173113690092994561&scope=bot%20application.commands).
 
 * See [DiscordGo](https://github.com/bwmarrin/discordgo) for more information on
 the low level bindings to the Discord API that this bot uses.
