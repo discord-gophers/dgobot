@@ -17,9 +17,17 @@ var cmd8Ball = &discordgo.ApplicationCommand{
 	Type:        discordgo.ChatApplicationCommand,
 	Name:        "8ball",
 	Description: "I can answer all your [yes/no] questions!",
+	Options: []*discordgo.ApplicationCommandOption{
+		{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "question",
+			Description: "The life-changing question to ask",
+			Required:    true,
+		},
+	},
 }
 
-func handle8Ball(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func handle8Ball(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	return ContentResponse(magicAnswers[rand.Intn(len(magicAnswers))]), nil
 }
 

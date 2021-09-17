@@ -11,7 +11,7 @@ const Version = "v0.1.0-rewrite"
 var (
 	AdminUserID  string // Skippy
 	HerderRoleID string
-	Commands = make(map[string]*Command)
+	Commands     = make(map[string]*Command)
 )
 
 type Command struct {

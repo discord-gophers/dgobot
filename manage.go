@@ -1,4 +1,5 @@
 //go:build manage
+// +build manage
 
 package main
 
