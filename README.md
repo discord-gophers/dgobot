@@ -15,7 +15,9 @@ the low level bindings to the Discord API that this bot uses.
 **For help with this package or general Go discussion, please join the [Discord 
 Gophers](https://discord.gg/0f1SbxBZjYq9jLBk) chat server.**
 
-## Adding/Removing commands
+<br/><br/>
+
+## Add/Remove Commands
 
 `go run manage.go -token <token> [-guild-id <guildID>] add|remove`
 
