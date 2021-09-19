@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"math/rand"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func init() {
@@ -43,7 +44,7 @@ var cmdRoll = &discordgo.ApplicationCommand{
 			Required:    false,
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{Name: "d4", Value: 4},
-				{Name: "d6", Value: 5},
+				{Name: "d6", Value: 6},
 				{Name: "d8", Value: 8},
 				{Name: "d10", Value: 10},
 				{Name: "d12", Value: 12},
@@ -53,14 +54,15 @@ var cmdRoll = &discordgo.ApplicationCommand{
 		{
 			Type:        discordgo.ApplicationCommandOptionInteger,
 			Name:        "modifier",
-			Description: "Static modifier (default 0)",
+			Description: "Modifier to add to final result (default 0)",
 			Required:    false,
 		},
 	},
 }
 
 func handleRoll(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	num, faces, modifier := 1, 6, 0
+	num, faces := 1, 6
+	var modifier int64
 
 	for _, opt := range ic.ApplicationCommandData().Options {
 		switch opt.Name {
@@ -69,19 +71,13 @@ func handleRoll(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discord
 		case "faces":
 			faces = int(opt.IntValue())
 		case "modifier":
-			modifier = int(opt.IntValue())
-			if modifier < -20 {
-				modifier = -20
-			}
-			if modifier > 20 {
-				modifier = 20
-			}
+			modifier = opt.IntValue()
 		}
 	}
 
 	sum := modifier
 	for i := 0; i < num; i++ {
-		sum += rand.Intn(faces) + 1
+		sum += int64(rand.Intn(faces) + 1)
 	}
 
 	return ContentResponse(fmt.Sprintf("```\n[%dd%d%+d] Rolled: %d```", num, faces, modifier, sum)), nil

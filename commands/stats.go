@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var StartTime = time.Now()
+var startTime = time.Now()
 
 func init() {
 	Commands[cmdStats.Name] = &Command{
@@ -35,7 +35,7 @@ func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disco
 		{Name: "Go", Value: runtime.Version(), Inline: true},
 		{Name: "dgobot", Value: Version, Inline: true},
 		{Name: "DiscordGo", Value: discordgo.VERSION, Inline: true},
-		{Name: "Uptime", Value: fmt.Sprintf("<t:%d:R>", time.Now().Unix()), Inline: true},
+		{Name: "Uptime", Value: fmt.Sprintf("<t:%d:R>", startTime.Unix()), Inline: true},
 		{Name: "Processes", Value: fmt.Sprint(runtime.NumGoroutine()), Inline: true},
 		{Name: "HeapAlloc", Value: fmt.Sprintf("%.2fMB", float64(mem.HeapAlloc)/1048576), Inline: true},
 		{Name: "Total Sys", Value: fmt.Sprintf("%.2fMB", float64(mem.Sys)/1048576), Inline: true},
@@ -49,11 +49,11 @@ func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disco
 			channels += len(v.Channels)
 			members += len(v.Members)
 		}
-		embed.Fields = append(embed.Fields, []*discordgo.MessageEmbedField{
-			{Name: "Guilds", Value: fmt.Sprint(guilds), Inline: true},
-			{Name: "Channels", Value: fmt.Sprint(channels), Inline: true},
-			{Name: "Members", Value: fmt.Sprint(members), Inline: true},
-		}...)
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(guilds), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprint(channels), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprint(members), Inline: true},
+		)
 	}
 	embed.Timestamp = time.Now().UTC().Format(time.RFC3339)
 

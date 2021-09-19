@@ -61,7 +61,7 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disc
 	// Look for the message sender in that guild's current voice states.
 	for _, vs := range g.VoiceStates {
 		if vs.UserID == ic.Message.Author.ID {
-			// Call in goroutine to allow functon to return response
+			// Call in goroutine to allow function to return response
 			go func() {
 				err = playSound(ds, g.ID, vs.ChannelID)
 				if err != nil {

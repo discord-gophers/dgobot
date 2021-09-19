@@ -104,13 +104,16 @@ type UResource struct {
 }
 
 type URLib struct {
-	mx       sync.Mutex
+	mx       sync.RWMutex
 	fileName string
 	keyword  map[string][]*UResource
 	resource map[string]*UResource
 }
 
 func (u *URLib) Add(resource *UResource) {
+	u.mx.Lock()
+	defer u.mx.Unlock()
+
 	u.resource[resource.URL.String()] = resource
 	for _, k := range resource.Keywords {
 		kws, ok := u.keyword[k]
@@ -123,6 +126,9 @@ func (u *URLib) Add(resource *UResource) {
 }
 
 func (u *URLib) Remove(url string) bool {
+	u.mx.Lock()
+	defer u.mx.Unlock()
+
 	before := len(u.resource)
 	delete(u.resource, url)
 	for k, v := range u.keyword {
@@ -181,6 +187,9 @@ func LoadURLib(path string) (*URLib, error) {
 }
 
 func (u *URLib) handleURL(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	u.mx.RLock()
+	defer u.mx.RUnlock()
+
 	arg := ic.ApplicationCommandData().Options[0].StringValue()
 
 	// Check if we have this keyword...

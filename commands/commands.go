@@ -5,8 +5,11 @@ import (
 	"github.com/bwmarrin/lit"
 )
 
-// Version is a constant that stores the Disgord version information.
-const Version = "v0.1.0-rewrite"
+const (
+	// Version is a constant that stores the Disgord version information.
+	Version       = "v0.1.0-rewrite"
+	ephemeralFlag = 64
+)
 
 var (
 	AdminUserID  string // Skippy
@@ -33,7 +36,7 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 	res, err := cmd.Handler(ds, ic)
 	if err != nil {
 		res = &discordgo.InteractionResponseData{
-			Flags: 64,
+			Flags: ephemeralFlag,
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title:       "Error",
@@ -61,7 +64,7 @@ func ContentResponse(c string) *discordgo.InteractionResponseData {
 
 func EphemeralResponse(c string) *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{
-		Flags:   64,
+		Flags:   ephemeralFlag,
 		Content: c,
 	}
 }

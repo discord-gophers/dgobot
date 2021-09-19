@@ -25,8 +25,11 @@ var cmdSay = &discordgo.ApplicationCommand{
 	},
 }
 
-func handleSay(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	resp := ic.ApplicationCommandData().Options[0].StringValue()
+func handleSay(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	var resp string
+	if len(ic.ApplicationCommandData().Options) > 0 {
+		resp = ic.ApplicationCommandData().Options[0].StringValue()
+	}
 	if resp == "" {
 		resp = "Say what?"
 	}

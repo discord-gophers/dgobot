@@ -17,13 +17,13 @@ var cmdAbout = &discordgo.ApplicationCommand{
 	Description: "About this bot.",
 }
 
-func handleAbout(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func handleAbout(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	resp := "\n" +
 		"Hi, I'm **dgo** the official Discord Google Go library (discordgo) test bot.\n\n" +
 		"I provide indispensable stress and bug testing of the discordgo library. " +
 		"By allowing me to remain on your server you are directly helping to improve " +
 		"both the discordgo library and Discord itself. *Thank you very very much!*\n\n" +
-		"You can learn more about me at <http://dgobot.com/>\n\n" +
+		"You can learn more about me at <https://github.com/DiscordGophers/dgobot>\n\n" +
 		"Also, checkout <https://airhorn.solutions/> and <http://septapus.com/> the two largest bots developed with the discordgo library.\n"
 
 	return ContentResponse(resp), nil
