@@ -142,8 +142,8 @@ func (u *URLib) Remove(url string) bool {
 }
 
 func (u *URLib) Save() error {
-	u.mx.Lock()
-	defer u.mx.Unlock()
+	u.mx.RLock()
+	defer u.mx.RUnlock()
 
 	lit.Debug("Saving repository...")
 	data, err := json.MarshalIndent(u.resource, "", "\t")
