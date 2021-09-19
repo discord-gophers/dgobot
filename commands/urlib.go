@@ -33,7 +33,7 @@ func init() {
 var cmdURL = &discordgo.ApplicationCommand{
 	Type:        discordgo.ChatApplicationCommand,
 	Name:        "go",
-	Description: "URLs",
+	Description: "Show URLs associated with the keyword.",
 	Options: []*discordgo.ApplicationCommandOption{
 		{
 			Type:        discordgo.ApplicationCommandOptionString,

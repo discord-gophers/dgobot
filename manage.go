@@ -21,7 +21,7 @@ var (
 )
 
 func main() {
-	fs := flag.NewFlagSet("dgbot", flag.ExitOnError)
+	fs := flag.NewFlagSet("dgobot", flag.ExitOnError)
 	token := fs.String("token", "", "Discord Authentication Token")
 	fs.StringVar(&GuildID, "guild-id", "", "Discord Guild ID")
 	cmd := ffcli.Command{

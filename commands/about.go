@@ -14,7 +14,7 @@ func init() {
 var cmdAbout = &discordgo.ApplicationCommand{
 	Type:        discordgo.ChatApplicationCommand,
 	Name:        "about",
-	Description: "About this Bot.",
+	Description: "About this bot.",
 }
 
 func handleAbout(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
