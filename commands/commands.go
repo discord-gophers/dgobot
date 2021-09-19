@@ -74,3 +74,9 @@ func EmbedResponse(e discordgo.MessageEmbed) *discordgo.InteractionResponseData 
 		Embeds: []*discordgo.MessageEmbed{&e},
 	}
 }
+
+func FileResponse(f discordgo.File) *discordgo.InteractionResponseData {
+	return &discordgo.InteractionResponseData{
+		Files: []*discordgo.File{&f},
+	}
+}
