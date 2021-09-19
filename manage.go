@@ -18,6 +18,7 @@ import (
 var (
 	session *discordgo.Session
 	GuildID string
+	AppID   string
 )
 
 func main() {
@@ -25,9 +26,10 @@ func main() {
 	token := fs.String("token", "", "Discord Authentication Token")
 	fs.StringVar(&GuildID, "guild-id", "", "Discord Guild ID")
 	cmd := ffcli.Command{
-		Name:    "dgobot manager",
-		FlagSet: fs,
-		Options: []ff.Option{ff.WithEnvVarPrefix("DG")},
+		Name:       "manage",
+		ShortUsage: `go run manage.go -token "<token>" -guild-id "<guildID> add|remove"`,
+		FlagSet:    fs,
+		Options:    []ff.Option{ff.WithEnvVarPrefix("DG")},
 		Subcommands: []*ffcli.Command{
 			{
 				Name:       "add",
@@ -51,10 +53,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if err := session.Open(); err != nil {
+	user, err := session.User("@me")
+	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
+	AppID = user.ID
 
 	if err := cmd.Run(context.Background()); err != nil {
 		panic(err)
@@ -66,17 +69,17 @@ func add(_ context.Context, _ []string) error {
 	for _, cmd := range commands.Commands {
 		cmds = append(cmds, cmd.ApplicationCommand)
 	}
-	_, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, GuildID, cmds)
+	_, err := session.ApplicationCommandBulkOverwrite(AppID, GuildID, cmds)
 	return err
 }
 
 func remove(_ context.Context, _ []string) error {
-	cmds, err := session.ApplicationCommands(session.State.User.ID, GuildID)
+	cmds, err := session.ApplicationCommands(AppID, GuildID)
 	if err != nil {
 		return err
 	}
 	for _, cmd := range cmds {
-		if err := session.ApplicationCommandDelete(session.State.User.ID, GuildID, cmd.ID); err != nil {
+		if err := session.ApplicationCommandDelete(AppID, GuildID, cmd.ID); err != nil {
 			return err
 		}
 	}
