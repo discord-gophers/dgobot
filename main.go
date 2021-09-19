@@ -19,13 +19,12 @@ import (
 
 func main() {
 	fmt.Printf(`
-	________  .__                               .___
-	\______ \ |__| ______ ____   ___________  __| _/
-	||    |  \|  |/  ___// ___\ /  _ \_  __ \/ __ |
-	||    '   \  |\___ \/ /_/  >  <_> )  | \/ /_/ |
-	||______  /__/____  >___  / \____/|__|  \____ |
-	\_______\/        \/_____/   %-16s\/`+"\n\n", commands.Version)
-
+	    .___            ___.           __   
+	  __| _/ ____   ____\_ |__   _____/  |_ 
+	 / __ | / ___\ /  _ \| __ \ /  _ \   __\
+	/ /_/ |/ /_/  >  <_> ) \_\ (  <_> )  |  
+	\____ |\___  / \____/|___  /\____/|__|  
+	     \/_____/            \/  %s`+"\n\n", commands.Version)
 	fs := flag.NewFlagSet("dgobot", flag.ExitOnError)
 	token := fs.String("token", "", "Discord Authentication Token")
 	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")

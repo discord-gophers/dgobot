@@ -20,6 +20,6 @@ var cmdInvite = &discordgo.ApplicationCommand{
 }
 
 func handleInvite(ds *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	inviteLink := fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s&scope=bot%%20application.commands", ds.State.User.ID)
+	inviteLink := fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s&scope=bot%%20applications.commands", ds.State.User.ID)
 	return ContentResponse("Please visit " + inviteLink + " to add dgo to your server."), nil
 }

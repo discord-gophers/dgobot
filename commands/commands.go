@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	// Version is a constant that stores the Disgord version information.
+	// Version is a constant that stores the dgobot version information.
 	Version       = "v0.1.0-rewrite"
 	ephemeralFlag = 64
 )

@@ -1,7 +1,5 @@
 package commands
 
-// Command parser for the Disgord Bot package.
-
 import (
 	"fmt"
 	"time"
