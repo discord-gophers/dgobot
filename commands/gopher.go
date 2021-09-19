@@ -66,6 +66,9 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disc
 				err = playSound(ds, g.ID, vs.ChannelID)
 				if err != nil {
 					lit.Error("gopher: playing sound: %s", err)
+					if _, err := ds.FollowupMessageCreate(ds.State.User.ID, ic.Interaction, false, &discordgo.WebhookParams{Content: gopherErr.Error()}); err != nil {
+						lit.Error("followup to interaction %s: %v", ic.ApplicationCommandData().Name, err)
+					}
 				}
 			}()
 			return ContentResponse("Dispatching..."), nil
