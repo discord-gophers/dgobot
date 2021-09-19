@@ -51,6 +51,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	if err := session.Open(); err != nil {
+		panic(err)
+	}
+	defer session.Close()
 
 	if err := cmd.Run(context.Background()); err != nil {
 		panic(err)
