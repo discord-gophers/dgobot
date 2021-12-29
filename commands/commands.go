@@ -19,7 +19,35 @@ var (
 
 type Command struct {
 	*discordgo.ApplicationCommand
-	Handler func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
+	Handler      func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
+	Autocomplete func(*discordgo.Session, *discordgo.InteractionCreate) ([]*discordgo.ApplicationCommandOptionChoice, error)
+}
+
+func OnAutocomplete(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	if ic.Type != discordgo.InteractionApplicationCommandAutocomplete {
+		return
+	}
+
+	data := ic.ApplicationCommandData()
+	cmd, ok := Commands[data.Name]
+	if !ok || cmd.Autocomplete == nil {
+		return
+	}
+
+	choices, err := cmd.Autocomplete(ds, ic)
+	if err != nil {
+		return
+	}
+
+	err = ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+		Data: &discordgo.InteractionResponseData{
+			Choices: choices,
+		},
+	})
+	if err != nil {
+		lit.Error("responding to autocomplete: %v", err)
+	}
 }
 
 func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
@@ -79,4 +107,23 @@ func FileResponse(f discordgo.File) *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{
 		Files: []*discordgo.File{&f},
 	}
+}
+
+func Autocomplete(options ...string) []*discordgo.ApplicationCommandOptionChoice {
+	if len(options) > 25 {
+		options = options[:25]
+	}
+
+	var choices []*discordgo.ApplicationCommandOptionChoice
+	for _, opt := range options {
+		if len(opt) > 100 {
+			opt = opt[:100]
+		}
+
+		choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+			Name:  opt,
+			Value: opt,
+		})
+	}
+	return choices
 }

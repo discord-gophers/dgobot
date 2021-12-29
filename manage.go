@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/DiscordGophers/dgobot/commands"
@@ -41,6 +42,9 @@ func main() {
 				ShortUsage: "Remove/delete commands",
 				Exec:       remove,
 			},
+		},
+		Exec: func(ctx context.Context, args []string) error {
+			return fmt.Errorf("error: you did not provide command add | remove")
 		},
 	}
 

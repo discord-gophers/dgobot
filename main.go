@@ -48,6 +48,7 @@ func main() {
 
 	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 	session.AddHandler(commands.OnInteractionCommand)
+	session.AddHandler(commands.OnAutocomplete)
 
 	if err := session.Open(); err != nil {
 		log.Fatalf("error opening connection to Discord: %v", err)

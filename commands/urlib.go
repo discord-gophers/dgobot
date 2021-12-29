@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func init() {
@@ -21,6 +23,7 @@ func init() {
 	Commands[cmdURL.Name] = &Command{
 		ApplicationCommand: cmdURL,
 		Handler:            urlib.handleURL,
+		Autocomplete:       urlib.handleURLComplete,
 	}
 	Commands[cmdURLib.Name] = &Command{
 		ApplicationCommand: cmdURLib,
@@ -34,10 +37,11 @@ var cmdURL = &discordgo.ApplicationCommand{
 	Description: "Show URLs associated with the keyword.",
 	Options: []*discordgo.ApplicationCommandOption{
 		{
-			Type:        discordgo.ApplicationCommandOptionString,
-			Name:        "keyword",
-			Description: "The keyword to show URLs for",
-			Required:    true,
+			Type:         discordgo.ApplicationCommandOptionString,
+			Name:         "keyword",
+			Description:  "The keyword to show URLs for",
+			Autocomplete: true,
+			Required:     true,
 		},
 	},
 }
@@ -201,6 +205,29 @@ func (u *URLib) handleURL(_ *discordgo.Session, ic *discordgo.InteractionCreate)
 		msg += fmt.Sprintf("**%s**, <%s> - *%s*\n", ur.Title, ur.URL.String(), ur.Author.Username)
 	}
 	return ContentResponse(msg), nil
+}
+
+func (u *URLib) handleURLComplete(_ *discordgo.Session, ic *discordgo.InteractionCreate) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	arg := ic.ApplicationCommandData().Options[0].StringValue()
+
+	keys := make([]string, 0, len(u.keyword))
+	for k := range u.keyword {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	ranks := fuzzy.RankFindFold(arg, keys)
+
+	var results []string
+	for _, rank := range ranks {
+		results = append(results, rank.Target)
+	}
+	// just show everything
+	if len(results) == 0 {
+		results = keys
+	}
+
+	return Autocomplete(results...), nil
 }
 
 func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
