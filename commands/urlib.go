@@ -98,11 +98,12 @@ var cmdURLib = &discordgo.ApplicationCommand{
 }
 
 type UResource struct {
-	URL      *url.URL       `json:"url"`
-	Keywords []string       `json:"keywords"`
-	Title    string         `json:"title"`
-	Added    time.Time      `json:"added"`
-	Author   discordgo.User `json:"author"`
+	URL      string    `json:"url"`
+	Keywords []string  `json:"keywords"`
+	Title    string    `json:"title"`
+	Added    time.Time `json:"added"`
+	Author   string    `json:"author"`
+	ID       string    `json:"id"`
 }
 
 type URLib struct {
@@ -116,14 +117,9 @@ func (u *URLib) Add(resource *UResource) {
 	u.mx.Lock()
 	defer u.mx.Unlock()
 
-	u.resource[resource.URL.String()] = resource
+	u.resource[resource.URL] = resource
 	for _, k := range resource.Keywords {
-		kws, ok := u.keyword[k]
-		if !ok {
-			kws = []*UResource{}
-		}
-		kws = append(kws, resource)
-		u.keyword[k] = kws
+		u.keyword[k] = append(u.keyword[k], resource)
 	}
 }
 
@@ -135,7 +131,7 @@ func (u *URLib) Remove(url string) bool {
 	delete(u.resource, url)
 	for k, v := range u.keyword {
 		for sk, sv := range v {
-			if sv.URL.String() == url {
+			if sv.URL == url {
 				u.keyword[k] = append(v[:sk], v[sk+1:]...)
 			}
 		}
@@ -150,7 +146,7 @@ func (u *URLib) Save() error {
 	lit.Debug("Saving repository...")
 	data, err := json.MarshalIndent(u.resource, "", "\t")
 	if err != nil {
-		return fmt.Errorf("marshalling urllib: %v", err)
+		return fmt.Errorf("marshalling urlib: %v", err)
 	}
 
 	if err := os.WriteFile(u.fileName, data, os.ModePerm); err != nil {
@@ -177,11 +173,7 @@ func LoadURLib(path string) (*URLib, error) {
 
 	for _, ur := range urlib.resource {
 		for _, k := range ur.Keywords {
-			// nil slice is okay
-			kws := urlib.keyword[k]
-
-			kws = append(kws, ur)
-			urlib.keyword[k] = kws
+			urlib.keyword[k] = append(urlib.keyword[k], ur)
 		}
 	}
 
@@ -202,7 +194,7 @@ func (u *URLib) handleURL(_ *discordgo.Session, ic *discordgo.InteractionCreate)
 
 	var msg string
 	for _, ur := range urs {
-		msg += fmt.Sprintf("**%s**, <%s> - *%s*\n", ur.Title, ur.URL.String(), ur.Author.Username)
+		msg += fmt.Sprintf("**%s**, <%s> - *%s*\n", ur.Title, ur.URL, ur.Author)
 	}
 	return ContentResponse(msg), nil
 }
@@ -269,11 +261,12 @@ func (u *URLib) handleURLibAdd(_ *discordgo.Session, ic *discordgo.InteractionCr
 
 	resp := fmt.Sprintf("Added `%s`.", ur)
 	u.Add(&UResource{
-		URL:      urp,
+		URL:      urp.String(),
 		Keywords: keywords,
 		Title:    title,
 		Added:    time.Now(),
-		Author:   *ic.Member.User,
+		Author:   ic.Member.User.Username,
+		ID:       ic.Member.User.ID,
 	})
 
 	if err := u.Save(); err != nil {
@@ -303,7 +296,7 @@ func (u *URLib) handleURLibRemove(_ *discordgo.Session, ic *discordgo.Interactio
 func (u *URLib) handleURLibList(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var str strings.Builder
 	for _, ur := range u.resource {
-		str.WriteString(fmt.Sprintf("**%s**, <%s> - *%s* (%s)\n", ur.Title, ur.URL.String(), ur.Author.Username, strings.Join(ur.Keywords, ", ")))
+		str.WriteString(fmt.Sprintf("**%s**, <%s> - *%s* (%s)\n", ur.Title, ur.URL, ur.Author, strings.Join(ur.Keywords, ", ")))
 	}
 	return EphemeralResponse(str.String()), nil
 }
