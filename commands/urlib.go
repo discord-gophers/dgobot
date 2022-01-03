@@ -1,8 +1,11 @@
 package commands
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
 	"sort"
@@ -15,8 +18,10 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
-func init() {
-	urlib, err := LoadURLib("urlib.json")
+var client = &http.Client{Timeout: time.Second * 2}
+
+func InitURLib(domain, pass string) {
+	urlib, err := LoadURLib("urlib.json", domain, pass)
 	if err != nil {
 		panic(err)
 	}
@@ -94,6 +99,24 @@ var cmdURLib = &discordgo.ApplicationCommand{
 			Name:        "list",
 			Description: "List URLs",
 		},
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommand,
+			Name:        "edit",
+			Description: "Edit URLs",
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommand,
+			Name:        "apply",
+			Description: "Apply updated URLs",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "code",
+					Description: "The export code",
+					Required:    true,
+				},
+			},
+		},
 	},
 }
 
@@ -111,6 +134,21 @@ type URLib struct {
 	fileName string
 	keyword  map[string][]*UResource
 	resource map[string]*UResource
+
+	// domain for hosting
+	domain string
+	// pass for hosting
+	pass string
+
+	// whether the code is up to date, or if the resources have been modified
+	// since
+	dirty bool
+	// the last known code.
+	code string
+	// last time the urlib edit request was made
+	lastCreated time.Time
+	// last time the urlib was updated via the edit request.
+	lastSaved time.Time
 }
 
 func (u *URLib) Add(resource *UResource) {
@@ -153,19 +191,24 @@ func (u *URLib) Save() error {
 		return fmt.Errorf("saving %s: %v", u.fileName, err)
 	}
 
+	u.dirty = true
 	return nil
 }
 
-func LoadURLib(path string) (*URLib, error) {
+func LoadURLib(path, domain, pass string) (*URLib, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 
 	urlib := &URLib{
+		mx:       sync.RWMutex{},
 		fileName: path,
 		keyword:  make(map[string][]*UResource),
 		resource: make(map[string]*UResource),
+		domain:   domain,
+		pass:     pass,
+		dirty:    false,
 	}
 	if err = json.NewDecoder(f).Decode(&urlib.resource); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s: %v", path, err)
@@ -231,20 +274,34 @@ func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCrea
 		}
 	}
 
-	if !(ic.Member.User.ID == AdminUserID || herder) {
-		return nil, fmt.Errorf("These commands are only for herders and above.")
-	}
+	var f func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
+	var check bool
 
 	cmd := ic.ApplicationCommandData().Options[0].Name
 	switch cmd {
 	case "add":
-		return u.handleURLibAdd(ds, ic)
+		f, check = u.handleURLibAdd, true
 	case "remove":
-		return u.handleURLibRemove(ds, ic)
+		f, check = u.handleURLibRemove, true
+	case "edit":
+		f, check = u.handleURLibEdit, true
+	case "apply":
+		f, check = u.handleURLibApply, true
+
 	case "list":
-		return u.handleURLibList(ds, ic)
+		f, check = u.handleURLibList, false
 	}
-	return nil, fmt.Errorf("Invalid option: `%s`.", cmd)
+	if f == nil {
+		return nil, fmt.Errorf("Invalid option: `%s`.", cmd)
+	}
+
+	if !check {
+		return f(ds, ic)
+	}
+	if !(ic.Member.User.ID == AdminUserID || herder) {
+		return nil, fmt.Errorf("These commands are only for herders and above.")
+	}
+	return f(ds, ic)
 }
 
 func (u *URLib) handleURLibAdd(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
@@ -294,9 +351,129 @@ func (u *URLib) handleURLibRemove(_ *discordgo.Session, ic *discordgo.Interactio
 }
 
 func (u *URLib) handleURLibList(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var str strings.Builder
-	for _, ur := range u.resource {
-		str.WriteString(fmt.Sprintf("**%s**, <%s> - *%s* (%s)\n", ur.Title, ur.URL, ur.Author, strings.Join(ur.Keywords, ", ")))
+	if u.dirty || u.code == "" {
+		u.mx.Lock()
+		defer u.mx.Unlock()
+
+		var err error
+		u.code, err = u.uploadURLib(u.resource)
+		if err != nil {
+			return nil, err
+		}
+		u.dirty = false
 	}
-	return EphemeralResponse(str.String()), nil
+
+	return EphemeralResponse("https://editor.discordgophers.com/" + u.code), nil
+}
+
+func (u *URLib) handleURLibEdit(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	editPayload := struct {
+		Type   string                `json:"type"`
+		Author string                `json:"author"`
+		ID     string                `json:"id"`
+		URLs   map[string]*UResource `json:"urls"`
+	}{"edit", ic.Member.User.Username, ic.Member.User.ID, u.resource}
+
+	u.mx.Lock()
+	defer u.mx.Unlock()
+
+	code, err := u.uploadURLib(editPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := fmt.Sprintf(
+		`Private edit link: https://editor.discordgophers.com/%s.
+Do not sure this link with others.
+Access code to apply changes: ||%s||.
+
+Time since last edit request: <t:%d>
+Time since last edit apply: <t:%d>`,
+		code, u.pass, u.lastCreated.Unix(), u.lastSaved.Unix())
+
+	u.lastCreated = time.Now()
+
+	return EphemeralResponse(msg), nil
+}
+
+func (u *URLib) handleURLibApply(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	code := ic.ApplicationCommandData().Options[0].Options[0].StringValue()
+
+	res, err := client.Get(u.domain + "/hosted/" + code + ".json")
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Could not apply: bad code: status code %d", res.StatusCode)
+	}
+
+	u.mx.Lock()
+	defer u.mx.Unlock()
+
+	if err = json.NewDecoder(res.Body).Decode(&u.resource); err != nil {
+		return nil, fmt.Errorf("Could not apply: %v", err)
+	}
+
+	// we decode and then reencode to make sure no errenous fields are in the
+	// payload
+	data, err := json.MarshalIndent(u.resource, "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("Could not marshal: %v", err)
+	}
+
+	if err := os.WriteFile(u.fileName, data, os.ModePerm); err != nil {
+		lit.Error("urlib(apply): saving: %v", err)
+		return nil, fmt.Errorf("Could not save: %v", err)
+	}
+
+	u.keyword = make(map[string][]*UResource)
+	for _, ur := range u.resource {
+		for _, k := range ur.Keywords {
+			u.keyword[k] = append(u.keyword[k], ur)
+		}
+	}
+
+	u.lastSaved = time.Now()
+
+	// we can reuse the new updated link
+	u.dirty = false
+	u.code = code
+
+	return EphemeralResponse("Changes successfully applied."), nil
+}
+
+func (u *URLib) uploadURLib(data interface{}) (string, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// this can't error out
+	fw, _ := writer.CreateFormFile("file", "urlib.json")
+	json.NewEncoder(fw).Encode(data)
+
+	fw, _ = writer.CreateFormField("pass")
+	fmt.Fprint(fw, u.pass)
+
+	writer.Close()
+
+	res, err := client.Post(u.domain+"/upload", writer.FormDataContentType(), body)
+	if err != nil {
+		lit.Error("urlib(upload): uploading: %v", err)
+		return "", fmt.Errorf("Could not create listing.")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		lit.Error("urlib(upload): uploading code: %v", res.StatusCode)
+		return "", fmt.Errorf("Could not create listing.")
+	}
+
+	var code string
+	if _, err := fmt.Fscanf(res.Body, u.domain+"/hosted/%s", &code); err != nil {
+		lit.Error("urlib(upload): scanning code: %v", err)
+		return "", fmt.Errorf("Could not create listing")
+	}
+
+	return strings.TrimSuffix(code, ".json"), nil
 }

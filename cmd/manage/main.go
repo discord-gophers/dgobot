@@ -66,6 +66,7 @@ func main() {
 }
 
 func add(_ context.Context, _ []string) error {
+	commands.InitURLib("", "")
 	cmds := make([]*discordgo.ApplicationCommand, 0, len(commands.Commands))
 	for _, cmd := range commands.Commands {
 		cmds = append(cmds, cmd.ApplicationCommand)

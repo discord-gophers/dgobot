@@ -27,6 +27,8 @@ func main() {
 	     \/_____/            \/  %s`+"\n\n", commands.Version)
 	fs := flag.NewFlagSet("dgobot", flag.ExitOnError)
 	token := fs.String("token", "", "Discord Authentication Token")
+	domain := fs.String("domain", "https://f.teamortix.com", "Filehost domain")
+	pass := fs.String("pass", "", "Filehost upload password (empty if none)")
 	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")
 	fs.StringVar(&commands.HerderRoleID, "herder-id", "370280974593818644", "Discord Herder Role ID")
 	fs.IntVar(&lit.LogLevel, "log-level", 0, "LogLevel (0-3)")
@@ -49,6 +51,7 @@ func main() {
 	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 	session.AddHandler(commands.OnInteractionCommand)
 	session.AddHandler(commands.OnAutocomplete)
+	commands.InitURLib(*domain, *pass)
 
 	if err := session.Open(); err != nil {
 		log.Fatalf("error opening connection to Discord: %v", err)
