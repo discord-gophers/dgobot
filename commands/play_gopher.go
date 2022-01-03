@@ -23,7 +23,7 @@ func init() {
 
 var cmdGopher = &discordgo.ApplicationCommand{
 	Type:        discordgo.ChatApplicationCommand,
-	Name:        "gopher",
+	Name:        "play-gopher",
 	Description: "Hear the call of the Gopher!",
 }
 

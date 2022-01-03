@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/DiscordGophers/dgobot/editor"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -135,10 +134,7 @@ type URLib struct {
 	keyword  map[string][]*UResource
 	resource map[string]*UResource
 
-	// domain for hosting
-	domain string
-	// pass for hosting
-	pass string
+	editor.UploadApplier
 
 	// whether the code is up to date, or if the resources have been modified
 	// since
@@ -206,9 +202,14 @@ func LoadURLib(path, domain, pass string) (*URLib, error) {
 		fileName: path,
 		keyword:  make(map[string][]*UResource),
 		resource: make(map[string]*UResource),
-		domain:   domain,
-		pass:     pass,
-		dirty:    false,
+		UploadApplier: editor.Filehost{
+			Client: &http.Client{
+				Timeout: time.Second * 5,
+			},
+			Domain: domain,
+			Pass:   pass,
+		},
+		dirty: false,
 	}
 	if err = json.NewDecoder(f).Decode(&urlib.resource); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s: %v", path, err)
@@ -356,9 +357,10 @@ func (u *URLib) handleURLibList(_ *discordgo.Session, _ *discordgo.InteractionCr
 		defer u.mx.Unlock()
 
 		var err error
-		u.code, err = u.uploadURLib(u.resource)
+		u.code, err = u.Upload(u.resource)
 		if err != nil {
-			return nil, err
+			lit.Error("could not make list: %v", err)
+			return nil, fmt.Errorf("Could not create listing")
 		}
 		u.dirty = false
 	}
@@ -377,9 +379,10 @@ func (u *URLib) handleURLibEdit(_ *discordgo.Session, ic *discordgo.InteractionC
 	u.mx.Lock()
 	defer u.mx.Unlock()
 
-	code, err := u.uploadURLib(editPayload)
+	code, err := u.Upload(editPayload)
 	if err != nil {
-		return nil, err
+		lit.Error("could not create edit: %v", err)
+		return nil, fmt.Errorf("Could not create listing")
 	}
 
 	msg := fmt.Sprintf(
@@ -389,7 +392,7 @@ Access code to apply changes: ||%s||.
 
 Time since last edit request: <t:%d>
 Time since last edit apply: <t:%d>`,
-		code, u.pass, u.lastCreated.Unix(), u.lastSaved.Unix())
+		code, u.ApplyCode(), u.lastCreated.Unix(), u.lastSaved.Unix())
 
 	u.lastCreated = time.Now()
 
@@ -399,20 +402,15 @@ Time since last edit apply: <t:%d>`,
 func (u *URLib) handleURLibApply(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	code := ic.ApplicationCommandData().Options[0].Options[0].StringValue()
 
-	res, err := client.Get(u.domain + "/hosted/" + code + ".json")
+	body, err := u.Apply(code)
 	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Could not apply: bad code: status code %d", res.StatusCode)
+		return nil, fmt.Errorf("could not apply code: %v", err)
 	}
 
 	u.mx.Lock()
 	defer u.mx.Unlock()
 
-	if err = json.NewDecoder(res.Body).Decode(&u.resource); err != nil {
+	if err = json.NewDecoder(body).Decode(&u.resource); err != nil {
 		return nil, fmt.Errorf("Could not apply: %v", err)
 	}
 
@@ -442,38 +440,4 @@ func (u *URLib) handleURLibApply(_ *discordgo.Session, ic *discordgo.Interaction
 	u.code = code
 
 	return EphemeralResponse("Changes successfully applied."), nil
-}
-
-func (u *URLib) uploadURLib(data interface{}) (string, error) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// this can't error out
-	fw, _ := writer.CreateFormFile("file", "urlib.json")
-	json.NewEncoder(fw).Encode(data)
-
-	fw, _ = writer.CreateFormField("pass")
-	fmt.Fprint(fw, u.pass)
-
-	writer.Close()
-
-	res, err := client.Post(u.domain+"/upload", writer.FormDataContentType(), body)
-	if err != nil {
-		lit.Error("urlib(upload): uploading: %v", err)
-		return "", fmt.Errorf("Could not create listing.")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		lit.Error("urlib(upload): uploading code: %v", res.StatusCode)
-		return "", fmt.Errorf("Could not create listing.")
-	}
-
-	var code string
-	if _, err := fmt.Fscanf(res.Body, u.domain+"/hosted/%s", &code); err != nil {
-		lit.Error("urlib(upload): scanning code: %v", err)
-		return "", fmt.Errorf("Could not create listing")
-	}
-
-	return strings.TrimSuffix(code, ".json"), nil
 }
