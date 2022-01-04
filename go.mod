@@ -1,4 +1,4 @@
-module github.com/DiscordGophers/dgobot
+module github.com/discord-gophers/dgobot
 
 go 1.16
 
