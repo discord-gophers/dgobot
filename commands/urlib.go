@@ -386,8 +386,8 @@ func (u *URLib) handleURLibEdit(_ *discordgo.Session, ic *discordgo.InteractionC
 	}
 
 	msg := fmt.Sprintf(
-		`Private edit link: https://editor.discordgophers.com/%s.
-Do not sure this link with others.
+		`Private edit link: <https://editor.discordgophers.com/%s>.
+Do not share this link with others.
 Access code to apply changes: ||%s||.
 
 Time since last edit request: <t:%d>
