@@ -19,7 +19,7 @@ Gophers](https://discord.gg/0f1SbxBZjYq9jLBk) chat server.**
 
 ## Add/Remove Commands
 
-`go run manage.go -token <token> [-guild-id <guildID>] add|remove`
+See [migrate](cmd/migrate) and [manage](cmd/manage).
 
 ## Special Thanks
 
