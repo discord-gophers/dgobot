@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DiscordGophers/dgobot/editor"
+	"github.com/discord-gophers/dgobot/editor"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/lithammer/fuzzysearch/fuzzy"

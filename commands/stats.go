@@ -30,7 +30,7 @@ func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disco
 	var embed discordgo.MessageEmbed
 	embed.Color = 0xf2c5a8
 	embed.Title = "Stats"
-	embed.URL = "https://github.com/DiscordGophers/dgobot"
+	embed.URL = "https://github.com/discord-gophers/dgobot"
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{Name: "Go", Value: runtime.Version(), Inline: true},
 		{Name: "dgobot", Value: Version, Inline: true},

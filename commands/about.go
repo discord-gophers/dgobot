@@ -23,7 +23,7 @@ func handleAbout(_ *discordgo.Session, _ *discordgo.InteractionCreate) (*discord
 		"I provide indispensable stress and bug testing of the discordgo library. " +
 		"By allowing me to remain on your server you are directly helping to improve " +
 		"both the discordgo library and Discord itself. *Thank you very very much!*\n\n" +
-		"You can learn more about me at <https://github.com/DiscordGophers/dgobot>\n\n" +
+		"You can learn more about me at <https://github.com/discord-gophers/dgobot>\n\n" +
 		"Also, checkout <https://airhorn.solutions/> and <http://septapus.com/> the two largest bots developed with the discordgo library.\n"
 
 	return ContentResponse(resp), nil

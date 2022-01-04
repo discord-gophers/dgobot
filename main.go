@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/DiscordGophers/dgobot/commands"
+	"github.com/discord-gophers/dgobot/commands"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"

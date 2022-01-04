@@ -10,7 +10,7 @@ var embed = discordgo.MessageEmbed{
 	Title:       "Embed Title",
 	Description: "This is the ~~embed~~ **description**\n```go\ngo fmt.Println(`Gopher!`)\n```",
 	Color:       0xf2c5a8,
-	URL:         "https://github.com/DiscordGophers/dgobot",
+	URL:         "https://github.com/discord-gophers/dgobot",
 	Timestamp:   time.Now().UTC().Format(time.RFC3339),
 	Author: &discordgo.MessageEmbedAuthor{
 		Name:    "Embed Author",
