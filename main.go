@@ -4,72 +4,62 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/discord-gophers/dgobot/commands"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/peterbourgon/ff/v3"
 )
 
-// Version is a constant that stores the Disgord version information.
-const Version = "v0.0.0-alpha"
-
-// Session is declared in the global space so it can be easily used
-// throughout this program.
-// In this use case, there is no error that would be returned.
-var Session, _ = discordgo.New()
-
-// Read in all configuration options from both environment variables and
-// command line arguments.
-func init() {
-
-	// Discord Authentication Token
-	Session.Token = os.Getenv("DG_TOKEN")
-	if Session.Token == "" {
-		flag.StringVar(&Session.Token, "t", "", "Discord Authentication Token")
-	}
-	flag.IntVar(&lit.LogLevel, "l", 0, "LogLevel  (0-3)")
-}
-
 func main() {
+	fmt.Printf(`
+	    .___            ___.           __   
+	  __| _/ ____   ____\_ |__   _____/  |_ 
+	 / __ | / ___\ /  _ \| __ \ /  _ \   __\
+	/ /_/ |/ /_/  >  <_> ) \_\ (  <_> )  |  
+	\____ |\___  / \____/|___  /\____/|__|  
+	     \/_____/            \/  %s`+"\n\n", commands.Version)
+	fs := flag.NewFlagSet("dgobot", flag.ExitOnError)
+	token := fs.String("token", "", "Discord Authentication Token")
+	domain := fs.String("domain", "https://f.teamortix.com", "Filehost domain")
+	pass := fs.String("pass", "", "Filehost upload password (empty if none)")
+	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")
+	fs.StringVar(&commands.HerderRoleID, "herder-id", "370280974593818644", "Discord Herder Role ID")
+	fs.IntVar(&lit.LogLevel, "log-level", 0, "LogLevel (0-3)")
+	if err := ff.Parse(fs, os.Args[1:], ff.WithEnvVarPrefix("DG")); err != nil {
+		lit.Error("could not parse flags: %v", err)
+		return
+	}
 
-	// Declare any variables needed later.
-	var err error
+	// Seed rand for any random commands
+	rand.Seed(time.Now().UnixNano())
 
-	// Print out a fancy logo!
-	fmt.Printf(` 
-	________  .__                               .___
-	\______ \ |__| ______ ____   ___________  __| _/
-	||    |  \|  |/  ___// ___\ /  _ \_  __ \/ __ | 
-	||    '   \  |\___ \/ /_/  >  <_> )  | \/ /_/ | 
-	||______  /__/____  >___  / \____/|__|  \____ | 
-	\_______\/        \/_____/   %-16s\/`+"\n\n", Version)
-
-	// Parse command line arguments
-	flag.Parse()
-
-	// Verify a Token was provided
-	if Session.Token == "" {
+	session, err := discordgo.New("Bot " + *token)
+	if err != nil {
+		fmt.Fprintf(fs.Output(), "Usage of %s:\n", fs.Name())
+		fs.PrintDefaults()
 		log.Println("You must provide a Discord authentication token.")
 		return
 	}
 
-	// Open a websocket connection to Discord
-	err = Session.Open()
-	if err != nil {
-		log.Printf("error opening connection to Discord, %s\n", err)
-		os.Exit(1)
-	}
+	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
+	session.AddHandler(commands.OnInteractionCommand)
+	session.AddHandler(commands.OnAutocomplete)
+	commands.InitURLib(*domain, *pass)
 
-	// Wait for a CTRL-C
+	if err := session.Open(); err != nil {
+		log.Fatalf("error opening connection to Discord: %v", err)
+	}
+	defer session.Close()
+
 	log.Println(`Now running. Press CTRL-C to exit.`)
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
-
-	// Clean up
-	Session.Close()
-
-	// Exit Normally.
 }
