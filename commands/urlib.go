@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/discord-gophers/dgobot/editor"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/discord-gophers/dgobot/editor"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
@@ -211,6 +211,7 @@ func LoadURLib(path, domain, pass string) (*URLib, error) {
 		},
 		dirty: false,
 	}
+
 	if err = json.NewDecoder(f).Decode(&urlib.resource); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s: %v", path, err)
 	}
@@ -410,9 +411,11 @@ func (u *URLib) handleURLibApply(_ *discordgo.Session, ic *discordgo.Interaction
 	u.mx.Lock()
 	defer u.mx.Unlock()
 
-	if err = json.NewDecoder(body).Decode(&u.resource); err != nil {
+	rsc := make(map[string]*UResource)
+	if err = json.NewDecoder(body).Decode(&rsc); err != nil {
 		return nil, fmt.Errorf("Could not apply: %v", err)
 	}
+	u.resource = rsc
 
 	// we decode and then reencode to make sure no errenous fields are in the
 	// payload
