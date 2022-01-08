@@ -237,11 +237,19 @@ func (u *URLib) handleURL(_ *discordgo.Session, ic *discordgo.InteractionCreate)
 		return nil, fmt.Errorf("No results for keyword `%s`.", arg)
 	}
 
-	var msg string
-	for _, ur := range urs {
-		msg += fmt.Sprintf("**%s**, <%s> - *%s*\n", ur.Title, ur.URL, ur.Author)
+	embed := discordgo.MessageEmbed{
+		Title: "URLs for " + arg,
 	}
-	return ContentResponse(msg), nil
+	for _, ur := range urs {
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{
+				Name:  fmt.Sprintf("%s - *%s*", ur.Title, ur.Author),
+				Value: ur.URL,
+			},
+		)
+	}
+
+	return EmbedResponse(embed), nil
 }
 
 func (u *URLib) handleURLComplete(_ *discordgo.Session, ic *discordgo.InteractionCreate) ([]*discordgo.ApplicationCommandOptionChoice, error) {
