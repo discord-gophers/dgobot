@@ -76,7 +76,7 @@ func handleWhois(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disco
 	if m.Nick == "" {
 		m.Nick = m.User.Username
 	}
-	js := fmt.Sprintf("<t:%d:R>", m.JoinedAt)
+	js := fmt.Sprintf("<t:%d:R>", m.JoinedAt.Unix())
 
 	embedFields := []*discordgo.MessageEmbedField{
 		{Name: "Joined", Value: js, Inline: true},
