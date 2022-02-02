@@ -23,7 +23,7 @@ var cmdStats = &discordgo.ApplicationCommand{
 	Description: "Display statistical information for this bot.",
 }
 
-func handleStats(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func handleStats(ds *discordgo.Session, _ *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 

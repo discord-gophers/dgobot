@@ -31,7 +31,7 @@ var cmdEmbed = &discordgo.ApplicationCommand{
 //go:embed embed_quine.go
 var embedQuine string
 
-func handleEmbed(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func handleEmbed(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var showCode bool
 	if len(ic.ApplicationCommandData().Options) > 0 {
 		showCode = ic.ApplicationCommandData().Options[0].BoolValue()
