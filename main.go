@@ -51,6 +51,7 @@ func main() {
 	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 	session.AddHandler(commands.OnInteractionCommand)
 	session.AddHandler(commands.OnAutocomplete)
+	session.AddHandler(commands.OnModalSubmit)
 	commands.InitURLib(*domain, *pass)
 
 	if err := session.Open(); err != nil {

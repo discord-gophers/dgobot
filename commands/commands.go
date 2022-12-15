@@ -75,12 +75,47 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 		}
 	}
 
+	typ := discordgo.InteractionResponseChannelMessageWithSource
+	if res.Title != "" {
+		typ = discordgo.InteractionResponseModal
+	}
+	err = ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
+		Type: typ,
+		Data: res,
+	})
+	if err != nil {
+		lit.Error("responding to interaction %s: %v", data.Name, err)
+	}
+}
+
+func OnModalSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	if ic.Type != discordgo.InteractionModalSubmit {
+		return
+	}
+
+	data := ic.ModalSubmitData()
+	cmd := Commands["notes"]
+
+	res, err := cmd.Handler(ds, ic)
+	if err != nil {
+		res = &discordgo.InteractionResponseData{
+			Flags: ephemeralFlag,
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title:       "Error",
+					Description: err.Error(),
+					Color:       0xEE2211,
+				},
+			},
+		}
+	}
+
 	err = ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: res,
 	})
 	if err != nil {
-		lit.Error("responding to interaction %s: %v", data.Name, err)
+		lit.Error("responding to modal submit %s: %v", data.CustomID, err)
 	}
 }
 

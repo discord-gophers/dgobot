@@ -65,7 +65,7 @@ func main() {
 	}
 }
 
-func add(_ context.Context, _ []string) error {
+func add(context.Context, []string) error {
 	commands.InitURLib("", "")
 	cmds := make([]*discordgo.ApplicationCommand, 0, len(commands.Commands))
 	for _, cmd := range commands.Commands {
@@ -75,7 +75,7 @@ func add(_ context.Context, _ []string) error {
 	return err
 }
 
-func remove(_ context.Context, _ []string) error {
+func remove(context.Context, []string) error {
 	cmds, err := session.ApplicationCommands(AppID, GuildID)
 	if err != nil {
 		return err

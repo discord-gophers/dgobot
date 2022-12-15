@@ -13,7 +13,7 @@ To add this bot to your Discord server, use
 the low level bindings to the Discord API that this bot uses.
 
 **For help with this package or general Go discussion, please join the [Discord 
-Gophers](https://discord.gg/0f1SbxBZjYq9jLBk) chat server.**
+Gophers](https://discord.gg/golang) chat server.**
 
 <br/><br/>
 

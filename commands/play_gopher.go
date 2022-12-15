@@ -69,7 +69,7 @@ func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*disc
 					followupErr := &discordgo.WebhookParams{
 						Content: gopherErr.Error(),
 					}
-					if _, err := ds.FollowupMessageCreate(ds.State.User.ID, ic.Interaction, false, followupErr); err != nil {
+					if _, err := ds.FollowupMessageCreate(ic.Interaction, false, followupErr); err != nil {
 						lit.Error("followup to interaction %s: %v", ic.ApplicationCommandData().Name, err)
 					}
 				}
