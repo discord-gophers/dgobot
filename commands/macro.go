@@ -10,7 +10,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	"golang.org/x/exp/maps"
 )
 
 func init() {
@@ -225,5 +224,10 @@ func (n *Macro) handleMacroAutocomplete(ds *discordgo.Session, ic *discordgo.Int
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	return Autocomplete(maps.Keys(n.Macro)...), nil
+	keys := make([]string, 0, len(n.Macro))
+	for k := range n.Macro {
+		keys = append(keys, k)
+	}
+
+	return Autocomplete(keys...), nil
 }
