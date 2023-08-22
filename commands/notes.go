@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -55,10 +56,13 @@ func LoadNotes(path string) (*Notes, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
 		f, err = os.Create(path)
+		f.Write([]byte("{}"))
+		f.Seek(0, 0)
 	}
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	notes := &Notes{
 		fileName: path,
@@ -86,7 +90,7 @@ func (n *Notes) Save() error {
 		return fmt.Errorf("marshalling notes: %v", err)
 	}
 
-	if err := os.WriteFile(n.fileName, data, os.ModePerm); err != nil {
+	if err := os.WriteFile(n.fileName, data, 0o644); err != nil {
 		return fmt.Errorf("saving %s: %v", n.fileName, err)
 	}
 
@@ -128,7 +132,7 @@ func (n *Notes) handleNotesApp(ds *discordgo.Session, ic *discordgo.InteractionC
 
 	return &discordgo.InteractionResponseData{
 		Title:    "Viewing notes for " + u.String(),
-		CustomID: u.ID,
+		CustomID: "notes:" + u.ID,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -168,7 +172,7 @@ func (n *Notes) handleNotesCmd(ds *discordgo.Session, ic *discordgo.InteractionC
 	notes := n.Notes[u.ID]
 	return &discordgo.InteractionResponseData{
 		Title:    "Viewing notes for " + u.String(),
-		CustomID: u.ID,
+		CustomID: "notes:" + u.ID,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -198,7 +202,12 @@ func (n *Notes) handleSubmitNotes(ds *discordgo.Session, ic *discordgo.Interacti
 	}
 
 	data := ic.ModalSubmitData()
-	u, err := ds.User(data.CustomID)
+	_, id, ok := strings.Cut(data.CustomID, ":")
+	if !ok {
+		return nil, fmt.Errorf("Invalid custom ID.")
+	}
+
+	u, err := ds.User(id)
 	if err != nil {
 		lit.Error("notes(submit): fetch user: %v", err)
 		return nil, fmt.Errorf("Could not update notes: unable to fetch user of note.")
@@ -207,7 +216,7 @@ func (n *Notes) handleSubmitNotes(ds *discordgo.Session, ic *discordgo.Interacti
 	input := data.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput)
 
 	n.mu.Lock()
-	n.Notes[data.CustomID] = input.Value
+	n.Notes[id] = input.Value
 	n.mu.Unlock()
 	if err := n.Save(); err != nil {
 		lit.Error("notes(submit): saving: %v", err)
