@@ -77,6 +77,7 @@ func LoadMacro(path string) (*Macro, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	macro := &Macro{
 		fileName: path,
@@ -104,7 +105,7 @@ func (m *Macro) Save() error {
 		return fmt.Errorf("marshalling macro: %v", err)
 	}
 
-	if err := os.WriteFile(m.fileName, data, os.ModePerm); err != nil {
+	if err := os.WriteFile(m.fileName, data, 0o644); err != nil {
 		return fmt.Errorf("saving %s: %v", m.fileName, err)
 	}
 

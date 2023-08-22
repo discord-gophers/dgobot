@@ -62,6 +62,7 @@ func LoadNotes(path string) (*Notes, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	notes := &Notes{
 		fileName: path,
@@ -89,7 +90,7 @@ func (n *Notes) Save() error {
 		return fmt.Errorf("marshalling notes: %v", err)
 	}
 
-	if err := os.WriteFile(n.fileName, data, os.ModePerm); err != nil {
+	if err := os.WriteFile(n.fileName, data, 0o644); err != nil {
 		return fmt.Errorf("saving %s: %v", n.fileName, err)
 	}
 
