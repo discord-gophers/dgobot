@@ -220,12 +220,12 @@ func (m *Macro) handleSubmitMacro(ds *discordgo.Session, ic *discordgo.Interacti
 	return EphemeralResponse("Updated macro for " + id), nil
 }
 
-func (n *Macro) handleMacroAutocomplete(ds *discordgo.Session, ic *discordgo.InteractionCreate) ([]*discordgo.ApplicationCommandOptionChoice, error) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+func (m *Macro) handleMacroAutocomplete(ds *discordgo.Session, ic *discordgo.InteractionCreate) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
-	keys := make([]string, 0, len(n.Macro))
-	for k := range n.Macro {
+	keys := make([]string, 0, len(m.Macro))
+	for k := range m.Macro {
 		keys = append(keys, k)
 	}
 
