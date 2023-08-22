@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 )
@@ -88,14 +90,22 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 	}
 }
 
+// OnModalSubmit routes modal submit interactions to the appropriate handler.
+// it uses `prefix:` from the custom ID to determine which handler to use.
 func OnModalSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 	if ic.Type != discordgo.InteractionModalSubmit {
 		return
 	}
 
 	data := ic.ModalSubmitData()
-	cmd := Commands["notes"]
+	prefix, _, ok := strings.Cut(data.CustomID, ":")
+	if !ok {
+		lit.Error("Invalid custom ID: %s", data.CustomID)
+		EphemeralResponse("Invalid modal submit.")
+		return
+	}
 
+	cmd := Commands[prefix]
 	res, err := cmd.Handler(ds, ic)
 	if err != nil {
 		res = &discordgo.InteractionResponseData{
