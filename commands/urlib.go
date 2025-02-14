@@ -20,6 +20,9 @@ import (
 var client = &http.Client{Timeout: time.Second * 2}
 
 func InitURLib(domain, pass string) {
+	if domain == "" {
+		return
+	}
 	urlib, err := LoadURLib("urlib.json", domain, pass)
 	if err != nil {
 		panic(err)
@@ -393,7 +396,7 @@ Access code to apply changes: ||%s||.
 
 Time since last edit request: <t:%d>
 Time since last edit apply: <t:%d>`,
-		code, u.ApplyCode(), u.lastCreated.Unix(), u.lastSaved.Unix())
+		code, u.Code(), u.lastCreated.Unix(), u.lastSaved.Unix())
 
 	u.lastCreated = time.Now()
 

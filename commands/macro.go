@@ -116,7 +116,7 @@ func (m *Macro) handleMacroRaw(ds *discordgo.Session, ic *discordgo.InteractionC
 	case discordgo.InteractionApplicationCommand:
 		return m.handleMacroCmd(ds, ic)
 	case discordgo.InteractionModalSubmit:
-		return m.handleSubmitMacro(ds, ic)
+		return m.handleMacroSubmit(ds, ic)
 	}
 
 	return nil, fmt.Errorf("unknown interaction type for macro command")
@@ -188,7 +188,7 @@ func (m *Macro) handleMacroSet(ds *discordgo.Session, ic *discordgo.InteractionC
 	}, nil
 }
 
-func (m *Macro) handleSubmitMacro(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (m *Macro) handleMacroSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	var herder bool
 	for _, role := range ic.Member.Roles {
 		if role == HerderRoleID {

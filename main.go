@@ -29,6 +29,8 @@ func main() {
 	pass := fs.String("pass", "", "Filehost upload password (empty if none)")
 	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")
 	fs.StringVar(&commands.HerderRoleID, "herder-id", "370280974593818644", "Discord Herder Role ID")
+	fs.StringVar(&commands.JobsChannelID, "jobs-channel", "484358165236809748", "Job listings channel ID")
+	fs.StringVar(&commands.JobsRoleID, "jobs-role", "", "Job posting role ID")
 	fs.IntVar(&lit.LogLevel, "log-level", 0, "LogLevel (0-3)")
 	if err := ff.Parse(fs, os.Args[1:], ff.WithEnvVarPrefix("DG")); err != nil {
 		lit.Error("could not parse flags: %v", err)
@@ -46,7 +48,7 @@ func main() {
 	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 	session.AddHandler(commands.OnInteractionCommand)
 	session.AddHandler(commands.OnAutocomplete)
-	session.AddHandler(commands.OnModalSubmit)
+	session.AddHandler(commands.OnInteractionOther)
 	commands.InitURLib(*domain, *pass)
 
 	if err := session.Open(); err != nil {
@@ -54,7 +56,20 @@ func main() {
 	}
 	defer session.Close()
 
-	log.Println(`Now running. Press CTRL-C to exit.`)
+	user, err := session.User("@me")
+	if err != nil {
+		panic(err)
+	}
+
+	cmds := make([]*discordgo.ApplicationCommand, 0, len(commands.Commands))
+	for _, v := range commands.Commands {
+		cmds = append(cmds, v.ApplicationCommand)
+	}
+	if _, err := session.ApplicationCommandBulkOverwrite(user.ID, "", cmds); err != nil {
+		panic(err)
+	}
+
+	log.Printf(`Now running as %s. Press CTRL-C to exit.`, user.ID)
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc

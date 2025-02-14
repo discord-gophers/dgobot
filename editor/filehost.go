@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var _ UploadApplier = Filehost{}
+
 type Filehost struct {
 	Client *http.Client
 	Domain string
@@ -60,6 +62,6 @@ func (f Filehost) Apply(code string) (io.ReadCloser, error) {
 	return res.Body, nil
 }
 
-func (f Filehost) ApplyCode() string {
+func (f Filehost) Code() string {
 	return f.Pass
 }
