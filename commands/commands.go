@@ -204,3 +204,14 @@ func Autocomplete(options ...string) []*discordgo.ApplicationCommandOptionChoice
 	}
 	return choices
 }
+
+func isHerder(ic *discordgo.InteractionCreate) bool {
+	var herder bool
+	for _, role := range ic.Member.Roles {
+		if role == HerderRoleID {
+			herder = true
+			break
+		}
+	}
+	return herder || ic.Member.User.ID == AdminUserID
+}

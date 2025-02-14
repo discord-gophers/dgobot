@@ -142,7 +142,7 @@ func (m *Macro) handleMacroCmd(ds *discordgo.Session, ic *discordgo.InteractionC
 	return EphemeralResponse("Unknown macro command."), nil
 }
 
-func (m *Macro) handleMacroGet(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (m *Macro) handleMacroGet(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -159,7 +159,7 @@ func (m *Macro) handleMacroGet(ds *discordgo.Session, ic *discordgo.InteractionC
 	return ContentResponse(v), nil
 }
 
-func (m *Macro) handleMacroSet(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+func (m *Macro) handleMacroSet(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -188,16 +188,8 @@ func (m *Macro) handleMacroSet(ds *discordgo.Session, ic *discordgo.InteractionC
 	}, nil
 }
 
-func (m *Macro) handleMacroSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
-	if ic.Member.User.ID != AdminUserID && !herder {
+func (m *Macro) handleMacroSubmit(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	if !isHerder(ic) {
 		return nil, fmt.Errorf("these commands are only for herders and above")
 	}
 

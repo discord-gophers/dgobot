@@ -271,14 +271,6 @@ func (u *URLib) handleURLComplete(_ *discordgo.Session, ic *discordgo.Interactio
 }
 
 func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
 	var f func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
 	var check bool
 
@@ -300,10 +292,7 @@ func (u *URLib) handleURLib(ds *discordgo.Session, ic *discordgo.InteractionCrea
 		return nil, fmt.Errorf("Invalid option: `%s`.", cmd)
 	}
 
-	if !check {
-		return f(ds, ic)
-	}
-	if !(ic.Member.User.ID == AdminUserID || herder) {
+	if check && !isHerder(ic) {
 		return nil, fmt.Errorf("These commands are only for herders and above.")
 	}
 	return f(ds, ic)

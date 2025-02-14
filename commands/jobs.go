@@ -164,14 +164,6 @@ func handleJobsRaw(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 }
 
 func handleJobsCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
 	var f func(*discordgo.Session, *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error)
 	var check bool
 
@@ -190,10 +182,7 @@ func handleJobsCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate) (
 		return nil, fmt.Errorf("Invalid option: `%s`.", cmd)
 	}
 
-	if !check {
-		return f(ds, ic)
-	}
-	if !(ic.Member.User.ID == AdminUserID || herder) {
+	if check && !isHerder(ic) {
 		return nil, fmt.Errorf("These commands are only for herders and above.")
 	}
 	return f(ds, ic)
@@ -235,18 +224,14 @@ func handleJobsPost(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*di
 }
 
 func handleJobsRequest(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var herder bool
 	var hasRole bool
 	for _, role := range ic.Member.Roles {
 		if role == JobsRoleID {
 			hasRole = true
 		}
-		if role == HerderRoleID {
-			herder = true
-		}
 	}
 	// Herders can test submit as needed.
-	if hasRole && !herder {
+	if hasRole && !isHerder(ic) {
 		return nil, fmt.Errorf("You already have access to post listings!\nSubmit a new post in this forum directly.")
 	}
 
@@ -261,7 +246,7 @@ func handleJobsRequest(ds *discordgo.Session, ic *discordgo.InteractionCreate) (
 			delete(jobSubmitCooldown, k)
 			continue
 		}
-		if k == ic.Member.User.ID && !herder {
+		if k == ic.Member.User.ID && !isHerder(ic) {
 			return nil, fmt.Errorf("You have already submitted a request recently. Please wait before submitting again, or contact a moderator.")
 		}
 	}
@@ -434,9 +419,15 @@ func handleJobsMsg(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 		return nil, fmt.Errorf("An internal error has occured. Please contact the mods.")
 	}
 
-	switch parts[1] {
-	case "request":
+	if parts[1] == "request" {
 		return handleJobsRequest(ds, ic)
+	}
+
+	if !isHerder(ic) {
+		return nil, fmt.Errorf("This action is only for herders and above.")
+	}
+
+	switch parts[1] {
 	case "accept":
 		return handleJobsAccept(ds, ic, parts[2])
 	case "reject":
@@ -464,17 +455,6 @@ func handleJobsMsg(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 }
 
 func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, userID string) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-	if !(ic.Member.User.ID == AdminUserID || herder) {
-		return nil, fmt.Errorf("This action is only for herders and above.")
-	}
-
 	if err := ds.GuildMemberRoleAdd(ic.GuildID, userID, JobsRoleID); err != nil {
 		lit.Error("could not assign role: %v", err)
 		return nil, fmt.Errorf("Could not assign user with role.")
@@ -503,17 +483,6 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 }
 
 func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, messageID, userID, reason string) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-	if !(ic.Member.User.ID == AdminUserID || herder) {
-		return nil, fmt.Errorf("This action is only for herders and above.")
-	}
-
 	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Rejected by <@"+ic.Member.User.ID+">", &discordgo.MessageReference{
 		GuildID:   ic.GuildID,
 		ChannelID: ic.ChannelID,

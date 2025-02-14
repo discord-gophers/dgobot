@@ -98,6 +98,10 @@ func (n *Notes) Save() error {
 }
 
 func (n *Notes) handleNotesRaw(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	if !isHerder(ic) {
+		return nil, fmt.Errorf("These commands are only for herders and above.")
+	}
+
 	switch ic.Type {
 	case discordgo.InteractionApplicationCommand:
 		return n.handleNotesCmd(ds, ic)
@@ -111,15 +115,7 @@ func (n *Notes) handleNotesApp(ds *discordgo.Session, ic *discordgo.InteractionC
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
-	if !(ic.Member.User.ID == AdminUserID || herder) {
+	if !isHerder(ic) {
 		return nil, fmt.Errorf("These commands are only for herders and above.")
 	}
 
@@ -152,18 +148,6 @@ func (n *Notes) handleNotesCmd(ds *discordgo.Session, ic *discordgo.InteractionC
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
-	if !(ic.Member.User.ID == AdminUserID || herder) {
-		return nil, fmt.Errorf("These commands are only for herders and above.")
-	}
-
 	u := ic.ApplicationCommandData().Options[0].UserValue(ds)
 	if u == nil {
 		return nil, fmt.Errorf("The selected user was unable to be found")
@@ -189,18 +173,6 @@ func (n *Notes) handleNotesCmd(ds *discordgo.Session, ic *discordgo.InteractionC
 }
 
 func (n *Notes) handleSubmitNotes(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-
-	if !(ic.Member.User.ID == AdminUserID || herder) {
-		return nil, fmt.Errorf("These commands are only for herders and above.")
-	}
-
 	data := ic.ModalSubmitData()
 	_, id, ok := strings.Cut(data.CustomID, ":")
 	if !ok {
