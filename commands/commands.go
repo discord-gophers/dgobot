@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -14,8 +15,6 @@ const (
 )
 
 var (
-	// AdminUserID is the user id for the server admin.
-	AdminUserID string // Skippy
 	// HerderRoleID is the "moderator" role equivalent for the server.
 	HerderRoleID string
 	// JobsChannelID is used for the channel where new job listings are submitted
@@ -206,12 +205,5 @@ func Autocomplete(options ...string) []*discordgo.ApplicationCommandOptionChoice
 }
 
 func isHerder(ic *discordgo.InteractionCreate) bool {
-	var herder bool
-	for _, role := range ic.Member.Roles {
-		if role == HerderRoleID {
-			herder = true
-			break
-		}
-	}
-	return herder || ic.Member.User.ID == AdminUserID
+	return slices.Contains(ic.Member.Roles, HerderRoleID)
 }

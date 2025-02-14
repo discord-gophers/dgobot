@@ -25,9 +25,10 @@ func main() {
 	     \/_____/            \/  %s`+"\n\n", commands.Version)
 	fs := flag.NewFlagSet("dgobot", flag.ExitOnError)
 	token := fs.String("token", "", "Discord Authentication Token")
+
 	domain := fs.String("domain", "https://f.teamortix.com", "Filehost domain")
 	pass := fs.String("pass", "", "Filehost upload password (empty if none)")
-	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")
+
 	fs.StringVar(&commands.HerderRoleID, "herder-id", "370280974593818644", "Discord Herder Role ID")
 	fs.StringVar(&commands.JobsChannelID, "jobs-channel", "484358165236809748", "Job listings channel ID")
 	fs.StringVar(&commands.JobsRoleID, "jobs-role", "1337402297306579006", "Job posting role ID")
