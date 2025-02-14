@@ -4,8 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"sync"
 	"time"
@@ -30,7 +29,7 @@ var cmdGopher = &discordgo.ApplicationCommand{
 var gopherErr = fmt.Errorf("Looks like all gophers are asleep right now")
 
 func handleGopher(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	if rand.Intn(15) <= 1 {
+	if rand.IntN(15) <= 1 {
 		return ContentResponse("https://www.youtube.com/watch?v=iay2wUY8uqA"), nil
 	}
 
@@ -91,12 +90,12 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	buffer := make([][]byte, 0)
 	var opuslen int16
 
-	files, err := ioutil.ReadDir("sounds/")
+	files, err := os.ReadDir("sounds/")
 	if err != nil {
 		return err
 	}
 
-	gopher := files[rand.Intn(len(files))]
+	gopher := files[rand.IntN(len(files))]
 	lit.Debug("Playing %s", gopher.Name())
 
 	// Join the provided voice channel.

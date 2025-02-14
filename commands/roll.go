@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -77,7 +77,7 @@ func handleRoll(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discord
 
 	sum := modifier
 	for i := 0; i < num; i++ {
-		sum += int64(rand.Intn(faces) + 1)
+		sum += int64(rand.IntN(faces) + 1)
 	}
 
 	return ContentResponse(fmt.Sprintf("```\n[%dd%d%+d] Rolled: %d```", num, faces, modifier, sum)), nil

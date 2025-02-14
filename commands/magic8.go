@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -30,7 +30,7 @@ var cmd8Ball = &discordgo.ApplicationCommand{
 
 func handle8Ball(_ *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
 	query := ic.ApplicationCommandData().Options[0].StringValue()
-	resp := fmt.Sprintf("> %s\n%s", query, magicAnswers[rand.Intn(len(magicAnswers))])
+	resp := fmt.Sprintf("> %s\n%s", query, magicAnswers[rand.IntN(len(magicAnswers))])
 	return ContentResponse(resp), nil
 }
 
