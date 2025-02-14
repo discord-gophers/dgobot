@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -20,7 +20,7 @@ var cmdJoke = &discordgo.ApplicationCommand{
 }
 
 func handleJoke(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
-	return ContentResponse(jokes[rand.Intn(len(jokes))]), nil
+	return ContentResponse(jokes[rand.IntN(len(jokes))]), nil
 }
 
 var jokes = []string{

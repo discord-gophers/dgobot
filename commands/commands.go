@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -14,9 +15,16 @@ const (
 )
 
 var (
-	AdminUserID  string // Skippy
+	// HerderRoleID is the "moderator" role equivalent for the server.
 	HerderRoleID string
-	Commands     = make(map[string]*Command)
+	// JobsChannelID is used for the channel where new job listings are submitted
+	// for review. It is *not* for the channel where job listings are shown
+	// publicly.
+	JobsChannelID string
+	// JobsRoleID is used to provide access to post job listings. It is given when
+	// approved.
+	JobsRoleID string
+	Commands   = make(map[string]*Command)
 )
 
 type Command struct {
@@ -59,7 +67,7 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 
 	data := ic.ApplicationCommandData()
 	cmd, ok := Commands[data.Name]
-	if !ok {
+	if !ok || cmd.Handler == nil {
 		return
 	}
 
@@ -90,17 +98,22 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 	}
 }
 
-// OnModalSubmit routes modal submit interactions to the appropriate handler.
+// OnInteractionOther routes modal submit/message component interactions to the appropriate handler.
 // it uses `prefix:` from the custom ID to determine which handler to use.
-func OnModalSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
-	if ic.Type != discordgo.InteractionModalSubmit {
+func OnInteractionOther(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	var customID string
+	switch ic.Type {
+	case discordgo.InteractionModalSubmit:
+		customID = ic.ModalSubmitData().CustomID
+	case discordgo.InteractionMessageComponent:
+		customID = ic.MessageComponentData().CustomID
+	default:
 		return
 	}
 
-	data := ic.ModalSubmitData()
-	prefix, _, ok := strings.Cut(data.CustomID, ":")
+	prefix, _, ok := strings.Cut(customID, ":")
 	if !ok {
-		lit.Error("Invalid custom ID: %s", data.CustomID)
+		lit.Error("Invalid custom ID: %s", customID)
 		EphemeralResponse("Invalid modal submit.")
 		return
 	}
@@ -120,18 +133,36 @@ func OnModalSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 		}
 	}
 
+	typ := discordgo.InteractionResponseChannelMessageWithSource
+	if res.Title != "" {
+		typ = discordgo.InteractionResponseModal
+	}
+	// DIRTY HORRIBLE UGLY HACK: we use TTS to flag to update the source message
+	if res.TTS {
+		typ = discordgo.InteractionResponseUpdateMessage
+		res.TTS = false
+	}
 	err = ds.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Type: typ,
 		Data: res,
 	})
 	if err != nil {
-		lit.Error("responding to modal submit %s: %v", data.CustomID, err)
+		lit.Error("responding to modal submit %s: %v", customID, err)
 	}
 }
 
 func ContentResponse(c string) *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{
 		Content: c,
+	}
+}
+
+func UpdateMessageResponse(msg *discordgo.Message) *discordgo.InteractionResponseData {
+	return &discordgo.InteractionResponseData{
+		Content:    msg.Content,
+		Components: msg.Components,
+		Embeds:     msg.Embeds,
+		TTS:        true,
 	}
 }
 
@@ -171,4 +202,8 @@ func Autocomplete(options ...string) []*discordgo.ApplicationCommandOptionChoice
 		})
 	}
 	return choices
+}
+
+func isHerder(ic *discordgo.InteractionCreate) bool {
+	return slices.Contains(ic.Member.Roles, HerderRoleID)
 }
