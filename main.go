@@ -30,7 +30,7 @@ func main() {
 	fs.StringVar(&commands.AdminUserID, "admin-id", "109112383011581952", "Discord Admin ID")
 	fs.StringVar(&commands.HerderRoleID, "herder-id", "370280974593818644", "Discord Herder Role ID")
 	fs.StringVar(&commands.JobsChannelID, "jobs-channel", "484358165236809748", "Job listings channel ID")
-	fs.StringVar(&commands.JobsRoleID, "jobs-role", "", "Job posting role ID")
+	fs.StringVar(&commands.JobsRoleID, "jobs-role", "1337402297306579006", "Job posting role ID")
 	fs.IntVar(&lit.LogLevel, "log-level", 0, "LogLevel (0-3)")
 	if err := ff.Parse(fs, os.Args[1:], ff.WithEnvVarPrefix("DG")); err != nil {
 		lit.Error("could not parse flags: %v", err)
