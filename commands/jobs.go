@@ -224,6 +224,10 @@ func handleJobsPost(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*di
 }
 
 func handleJobsRequest(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	if ic.Member == nil {
+		return nil, fmt.Errorf("This application can only be used from within the Gophers Server")
+	}
+
 	var hasRole bool
 	for _, role := range ic.Member.Roles {
 		if role == JobsRoleID {
@@ -320,6 +324,10 @@ func handleJobsRequest(ds *discordgo.Session, ic *discordgo.InteractionCreate) (
 }
 
 func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*discordgo.InteractionResponseData, error) {
+	if ic.Member == nil {
+		return nil, fmt.Errorf("This application can only be used from within the Gophers Server")
+	}
+
 	data := ic.ModalSubmitData()
 
 	parts := strings.Split(data.CustomID, ":")
@@ -455,6 +463,10 @@ func handleJobsMsg(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 }
 
 func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, userID string) (*discordgo.InteractionResponseData, error) {
+	if ic.Member == nil {
+		return nil, fmt.Errorf("This application can only be used from within the Gophers Server")
+	}
+
 	if err := ds.GuildMemberRoleAdd(ic.GuildID, userID, JobsRoleID); err != nil {
 		lit.Error("could not assign role: %v", err)
 		return nil, fmt.Errorf("Could not assign user with role.")

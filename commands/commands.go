@@ -205,5 +205,8 @@ func Autocomplete(options ...string) []*discordgo.ApplicationCommandOptionChoice
 }
 
 func isHerder(ic *discordgo.InteractionCreate) bool {
+	if ic.Member == nil {
+		return false
+	}
 	return slices.Contains(ic.Member.Roles, HerderRoleID)
 }
