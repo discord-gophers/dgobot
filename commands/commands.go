@@ -34,6 +34,11 @@ type Command struct {
 }
 
 func OnAutocomplete(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			lit.Error("panic recover: %v, interaction: %v", r, ic)
+		}
+	}()
 	if ic.Type != discordgo.InteractionApplicationCommandAutocomplete {
 		return
 	}
@@ -61,6 +66,12 @@ func OnAutocomplete(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
 }
 
 func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			lit.Error("panic recover: %v, interaction: %v", r, ic)
+		}
+	}()
+
 	if ic.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
@@ -101,6 +112,12 @@ func OnInteractionCommand(ds *discordgo.Session, ic *discordgo.InteractionCreate
 // OnInteractionOther routes modal submit/message component interactions to the appropriate handler.
 // it uses `prefix:` from the custom ID to determine which handler to use.
 func OnInteractionOther(ds *discordgo.Session, ic *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			lit.Error("panic recover: %v, interaction: %v", r, ic)
+		}
+	}()
+
 	var customID string
 	switch ic.Type {
 	case discordgo.InteractionModalSubmit:
