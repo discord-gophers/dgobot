@@ -510,6 +510,10 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, me
 		}
 	}
 
+	jobSubmitMu.Lock()
+	delete(jobSubmitCooldown, userID)
+	jobSubmitMu.Unlock()
+
 	ic.Message.Components = nil
 	ic.Message.Embeds[0].Footer.Text = "Rejected by " + ic.Member.User.Username
 	return UpdateMessageResponse(ic.Message), nil
