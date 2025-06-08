@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -42,7 +41,7 @@ You are welcome to modify, update, and post as many applications as you wish onc
 `
 	jobAcceptedMessage = `
 ## Congratulations, your posting request has been accepted.
-
+%s
 You are now able to post listings. However, please limit re-posting similar postings to once every 2 weeks.
 
 Here is your post template. Modify as needed before posting:
@@ -61,7 +60,7 @@ Here is your post template. Modify as needed before posting:
 ` + "```" + `
 
 ### Important notes:
-- If your listing has a link to further information, or an listing board with multiple opportunites *with Go*, include it.
+- If you have a link withfurther information on your posting, or a listing board with multiple opportunites *__in Go__*, include it.
 - Spamming or misuse will result in permanent revocation to posting.
 `
 
@@ -332,9 +331,14 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 	data := ic.ModalSubmitData()
 
 	parts := strings.Split(data.CustomID, ":")
-	if len(parts) == 3 && parts[1] == "reject" {
+	if len(parts) == 3 {
 		reason := data.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput)
-		return handleJobsReject(ds, ic, reason.CustomID, parts[2], reason.Value)
+		switch parts[1] {
+		case "accept":
+			return handleJobsAccept(ds, ic, parts[2], reason.Value)
+		case "reject":
+			return handleJobsReject(ds, ic, parts[2], reason.Value)
+		}
 	}
 
 	var title, loc, pay, desc, addl string
@@ -416,11 +420,6 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 				},
 			},
 		},
-		// only allow the message to mention the sender
-		AllowedMentions: &discordgo.MessageAllowedMentions{
-			Parse: []discordgo.AllowedMentionType{},
-			Users: []string{ic.Member.User.ID},
-		},
 	})
 
 	jobSubmitMu.Lock()
@@ -447,10 +446,28 @@ func handleJobsMsg(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 
 	switch parts[1] {
 	case "accept":
-		return handleJobsAccept(ds, ic, parts[2])
+		// return handleJobsAccept(ds, ic, parts[2])
+		return &discordgo.InteractionResponseData{
+			Title:    "Accept Posting",
+			CustomID: data.CustomID,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						&discordgo.TextInput{
+							Label:       "Additional Message (Optional)",
+							Style:       discordgo.TextInputParagraph,
+							CustomID:    ic.Message.ID,
+							Required:    false,
+							Placeholder: "waow very gud",
+							MaxLength:   1024,
+						},
+					},
+				},
+			},
+		}, nil
 	case "reject":
 		return &discordgo.InteractionResponseData{
-			Title:    "Reject Request",
+			Title:    "Reject Posting",
 			CustomID: data.CustomID,
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{
@@ -472,7 +489,7 @@ func handleJobsMsg(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*dis
 	return EphemeralResponse(data.CustomID), nil
 }
 
-func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, userID string) (*discordgo.InteractionResponseData, error) {
+func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, userID, reason string) (*discordgo.InteractionResponseData, error) {
 	if ic.Member == nil {
 		return nil, fmt.Errorf("This application can only be used from within the Gophers Server")
 	}
@@ -482,7 +499,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 		return nil, fmt.Errorf("Could not assign user with role.")
 	}
 
-	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Accepted by " + ic.Member.Mention(), &discordgo.MessageReference{
+	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Accepted by "+ic.Member.Mention(), &discordgo.MessageReference{
 		GuildID:   ic.GuildID,
 		ChannelID: ic.ChannelID,
 		MessageID: ic.Message.ID,
@@ -492,22 +509,28 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 
 	dm, err := ds.UserChannelCreate(userID)
 	if err == nil {
+		if reason != "" {
+			reason = fmt.Sprintf(`
+### Additional message from reviewers:
+%s
+`, reason)
+		}
 		fields := ic.Message.Embeds[0].Fields
 		if _, err := ds.ChannelMessageSend(dm.ID, fmt.Sprintf(jobAcceptedMessage,
-			fields[2].Value, fields[3].Value, fields[4].Value, fields[5].Value, fields[6].Value)); err != nil {
+			reason, fields[2].Value, fields[3].Value, fields[4].Value, fields[5].Value, fields[6].Value)); err != nil {
 			lit.Error("could not send dm: %v", err)
 		}
 	}
 
-	updateJobReviewAfterInteraction(ic, "Accepted by " + ic.Member.Mention())
+	updateJobReviewAfterInteraction(ic, "Accepted by "+ic.Member.Mention(), reason)
 	return UpdateMessageResponse(ic.Message), nil
 }
 
-func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, messageID, userID, reason string) (*discordgo.InteractionResponseData, error) {
-	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Rejected by " + ic.Member.Mention(), &discordgo.MessageReference{
+func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, userID, reason string) (*discordgo.InteractionResponseData, error) {
+	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Rejected by "+ic.Member.Mention(), &discordgo.MessageReference{
 		GuildID:   ic.GuildID,
 		ChannelID: ic.ChannelID,
-		MessageID: messageID,
+		MessageID: ic.Message.ID,
 	}); err != nil {
 		lit.Error("could not reply to message: %v", err)
 	}
@@ -523,7 +546,7 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, me
 	delete(jobSubmitCooldown, userID)
 	jobSubmitMu.Unlock()
 
-	updateJobReviewAfterInteraction(ic, "Rejected by " + ic.Member.Mention())
+	updateJobReviewAfterInteraction(ic, "Rejected by "+ic.Member.Mention(), reason)
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -545,15 +568,16 @@ func handleJobsRemove(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 	return EphemeralResponse("Role updated"), nil
 }
 
-func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText string) {
+func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText string, reason string) {
 	ic.Message.Components = nil
 	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
 		Text:    footerText,
 		IconURL: ic.Member.AvatarURL(""),
 	}
-	if ic.Message.AllowedMentions != nil {
-		if !slices.Contains(ic.Message.AllowedMentions.Users, ic.Member.User.ID) {
-			ic.Message.AllowedMentions.Users = append(ic.Message.AllowedMentions.Users, ic.Member.User.ID)
-		}
+	if reason != "" {
+		ic.Message.Embeds[0].Fields = append(ic.Message.Embeds[0].Fields, &discordgo.MessageEmbedField{
+			Name:  "Reason",
+			Value: reason,
+		})
 	}
 }

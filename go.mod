@@ -3,7 +3,7 @@ module github.com/discord-gophers/dgobot
 go 1.24
 
 require (
-	github.com/bwmarrin/discordgo v0.28.1
+	github.com/bwmarrin/discordgo v0.29.0
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/peterbourgon/ff/v3 v3.4.0
