@@ -357,14 +357,17 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "New Job Posting Access Request",
-				Footer: &discordgo.MessageEmbedFooter{
+				Author: &discordgo.MessageEmbedAuthor{
+					Name:    ic.Member.DisplayName(),
 					IconURL: ic.Member.AvatarURL(""),
-					Text:    "Pending Decision",
+				},
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: "Pending Decision",
 				},
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:   "User",
-						Value:  "<@" + ic.Member.User.ID + ">",
+						Value:  ic.Member.Mention(),
 						Inline: true,
 					},
 					{
@@ -490,7 +493,10 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 	}
 
 	ic.Message.Components = nil
-	ic.Message.Embeds[0].Footer.Text = "Accepted by " + ic.Member.User.Username
+	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
+		Text:    "Accepted by " + ic.Member.Mention(),
+		IconURL: ic.Member.AvatarURL(""),
+	}
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -515,7 +521,10 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, me
 	jobSubmitMu.Unlock()
 
 	ic.Message.Components = nil
-	ic.Message.Embeds[0].Footer.Text = "Rejected by " + ic.Member.User.Username
+	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
+		Text:    "Rejected by " + ic.Member.Mention(),
+		IconURL: ic.Member.AvatarURL(""),
+	}
 	return UpdateMessageResponse(ic.Message), nil
 }
 
