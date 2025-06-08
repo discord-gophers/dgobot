@@ -355,7 +355,7 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 	}
 
 	ds.ChannelMessageSendComplex(JobsChannelID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("|| %s ||", ic.Member.Mention())
+		Content: fmt.Sprintf("|| %s ||", ic.Member.Mention()),
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "New Job Posting Access Request",
