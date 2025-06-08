@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -354,6 +355,7 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 	}
 
 	ds.ChannelMessageSendComplex(JobsChannelID, &discordgo.MessageSend{
+		Content: fmt.Sprintf("|| %s ||", ic.Member.Mention())
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "New Job Posting Access Request",
@@ -413,6 +415,11 @@ func handleJobsSubmit(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 					},
 				},
 			},
+		},
+		// only allow the message to mention the sender
+		AllowedMentions: &discordgo.MessageAllowedMentions{
+			Parse: []discordgo.AllowedMentionType{},
+			Users: []string{ic.Member.User.ID},
 		},
 	})
 
@@ -475,7 +482,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 		return nil, fmt.Errorf("Could not assign user with role.")
 	}
 
-	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Accepted by <@"+ic.Member.User.ID+">", &discordgo.MessageReference{
+	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Accepted by " + ic.Member.Mention(), &discordgo.MessageReference{
 		GuildID:   ic.GuildID,
 		ChannelID: ic.ChannelID,
 		MessageID: ic.Message.ID,
@@ -492,11 +499,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 		}
 	}
 
-	ic.Message.Components = nil
-	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
-		Text:    "Accepted by " + ic.Member.Mention(),
-		IconURL: ic.Member.AvatarURL(""),
-	}
+	updateJobReviewAfterInteraction("Accepted by " + ic.Member.Mention())
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -520,11 +523,7 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, me
 	delete(jobSubmitCooldown, userID)
 	jobSubmitMu.Unlock()
 
-	ic.Message.Components = nil
-	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
-		Text:    "Rejected by " + ic.Member.Mention(),
-		IconURL: ic.Member.AvatarURL(""),
-	}
+	updateJobReviewAfterInteraction("Rejected by " + ic.Member.Mention())
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -544,4 +543,17 @@ func handleJobsRemove(ds *discordgo.Session, ic *discordgo.InteractionCreate) (*
 		return nil, fmt.Errorf("Could not assign user with role.")
 	}
 	return EphemeralResponse("Role updated"), nil
+}
+
+func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText string) {
+	ic.Message.Components = nil
+	ic.Message.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
+		Text:    footerText,
+		IconURL: ic.Member.AvatarURL(""),
+	}
+	if ic.Message.AllowedMentions != nil {
+		if !slices.Contains(ic.Message.AllowedMentions.Users, ic.Member.User.ID) {
+			ic.Message.AllowedMentions.Users = append(ic.Message.AllowedMentions.Users, ic.Member.User.ID)
+		}
+	}
 }
