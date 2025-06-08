@@ -504,7 +504,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 }
 
 func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, messageID, userID, reason string) (*discordgo.InteractionResponseData, error) {
-	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Rejected by <@"+ic.Member.User.ID+">", &discordgo.MessageReference{
+	if _, err := ds.ChannelMessageSendReply(ic.ChannelID, "Rejected by " + ic.Member.Mention(), &discordgo.MessageReference{
 		GuildID:   ic.GuildID,
 		ChannelID: ic.ChannelID,
 		MessageID: messageID,
