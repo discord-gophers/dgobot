@@ -499,7 +499,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 		}
 	}
 
-	updateJobReviewAfterInteraction("Accepted by " + ic.Member.Mention())
+	updateJobReviewAfterInteraction(ic, "Accepted by " + ic.Member.Mention())
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -523,7 +523,7 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, me
 	delete(jobSubmitCooldown, userID)
 	jobSubmitMu.Unlock()
 
-	updateJobReviewAfterInteraction("Rejected by " + ic.Member.Mention())
+	updateJobReviewAfterInteraction(ic, "Rejected by " + ic.Member.Mention())
 	return UpdateMessageResponse(ic.Message), nil
 }
 
