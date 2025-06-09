@@ -578,11 +578,11 @@ func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText
 		ic.Message.Embeds[0].Fields = append(
 			ic.Message.Embeds[0].Fields,
 			&discordgo.MessageEmbedField{
-				Name:  "Operator",
+				Name:  "Reviewer",
 				Value: ic.Member.Mention(),
 			},
 			&discordgo.MessageEmbedField{
-				Name:  "Operate Reason",
+				Name:  "Reason",
 				Value: reason,
 			},
 		)
