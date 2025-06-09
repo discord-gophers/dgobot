@@ -522,7 +522,7 @@ func handleJobsAccept(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 		}
 	}
 
-	updateJobReviewAfterInteraction(ic, "Accepted by "+ic.Member.Mention(), reason)
+	updateJobReviewAfterInteraction(ic, "Accepted by "+ic.Member.User.Username, reason)
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -546,7 +546,7 @@ func handleJobsReject(ds *discordgo.Session, ic *discordgo.InteractionCreate, us
 	delete(jobSubmitCooldown, userID)
 	jobSubmitMu.Unlock()
 
-	updateJobReviewAfterInteraction(ic, "Rejected by "+ic.Member.Mention(), reason)
+	updateJobReviewAfterInteraction(ic, "Rejected by "+ic.Member.User.Username, reason)
 	return UpdateMessageResponse(ic.Message), nil
 }
 
@@ -575,9 +575,16 @@ func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText
 		IconURL: ic.Member.AvatarURL(""),
 	}
 	if reason != "" {
-		ic.Message.Embeds[0].Fields = append(ic.Message.Embeds[0].Fields, &discordgo.MessageEmbedField{
-			Name:  "Reason",
-			Value: reason,
-		})
+		ic.Message.Embeds[0].Fields = append(
+			ic.Message.Embeds[0].Fields,
+			&discordgo.MessageEmbedField{
+				Name:  "Operator",
+				Value: ic.Member.Mention(),
+			},
+			&discordgo.MessageEmbedField{
+				Name:  "Operate Reason",
+				Value: reason,
+			},
+		)
 	}
 }
