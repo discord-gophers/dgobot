@@ -574,17 +574,14 @@ func updateJobReviewAfterInteraction(ic *discordgo.InteractionCreate, footerText
 		Text:    footerText,
 		IconURL: ic.Member.AvatarURL(""),
 	}
+	ic.Message.Embeds[0].Fields = append(ic.Message.Embeds[0].Fields, &discordgo.MessageEmbedField{
+		Name:  "Reviewer",
+		Value: ic.Member.Mention(),
+	})
 	if reason != "" {
-		ic.Message.Embeds[0].Fields = append(
-			ic.Message.Embeds[0].Fields,
-			&discordgo.MessageEmbedField{
-				Name:  "Reviewer",
-				Value: ic.Member.Mention(),
-			},
-			&discordgo.MessageEmbedField{
-				Name:  "Reason",
-				Value: reason,
-			},
-		)
+		ic.Message.Embeds[0].Fields = append(ic.Message.Embeds[0].Fields, &discordgo.MessageEmbedField{
+			Name:  "Reason",
+			Value: reason,
+		})
 	}
 }
